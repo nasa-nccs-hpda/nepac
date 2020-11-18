@@ -2,7 +2,6 @@
 import unittest
 
 import datetime
-import os
 
 from nepac.model.OceanColorRetriever import OceanColorRetriever
 
@@ -52,18 +51,15 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         validDateTime = datetime.datetime(2004, 1, 1, 2, 10)
         invalidDateTime = datetime.datetime(2004, 1, 1, 0, 5)
 
-        # File name of the file we're downloading in the
-        # valid test case
-        fileName = 'A2004001021000.L2_LAC_OC.nc'
-
-        # Make sure for testing purposes we can download
-        # without duplicating if doing repeated tests
-        if os.path.exists(fileName):
-            os.system("rm " + fileName)
-
         # Test invalid date time
         with self.assertRaisesRegex(RuntimeError, 'File not found:'):
             OceanColorRetriever('MODIS-Aqua', 'iPAR', invalidDateTime).run()
 
         # Test valid date time
         OceanColorRetriever('MODIS-Aqua', 'iPAR', validDateTime).run()
+        OceanColorRetriever('MODIS-Terra', 'iPAR', datetime.datetime(
+            2001, 1, 1, 0, 0)).run()
+        OceanColorRetriever('CZCS', 'Kd_490', datetime.datetime(
+            1978, 10, 30, 12, 48, 34)).run()
+        OceanColorRetriever('GOCI', 'Kd_490', datetime.datetime(
+            2011, 4, 1, 00, 16, 41)).run()
