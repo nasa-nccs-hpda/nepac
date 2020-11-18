@@ -110,7 +110,7 @@ class OceanColorRetriever(object):
     def __init__(self, mission, dataSet, dateTime):
 
         self._validate(mission, dataSet, dateTime)
-        self._dateRange = dateTime
+        self._dateTime = dateTime
         self._mission = mission
         self._dataSet = dataSet
 
@@ -121,11 +121,11 @@ class OceanColorRetriever(object):
 
         fileName = ''.join(
             OceanColorRetriever.MISSION_FILE_PREFIXES[self._mission])
-        fileName = fileName + self._dateRange.strftime("%Y") + \
-            self._dateRange.strftime("%j") + \
-            self._dateRange.strftime("%H") + \
-            self._dateRange.strftime("%M") + \
-            self._dateRange.strftime("%S") + \
+        fileName = fileName + self._dateTime.strftime("%Y") + \
+            self._dateTime.strftime("%j") + \
+            self._dateTime.strftime("%H") + \
+            self._dateTime.strftime("%M") + \
+            self._dateTime.strftime("%S") + \
             '.' + OceanColorRetriever.MISSION_LEVEL + \
             OceanColorRetriever.MISSION_FILE_SUFFIXES[self._mission] + \
             '.nc'
