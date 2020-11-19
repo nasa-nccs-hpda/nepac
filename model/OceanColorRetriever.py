@@ -63,13 +63,13 @@ class OceanColorRetriever(object):
 
         'MODIS-Aqua': pandas.date_range('2002-07-04', datetime.date.today()),
         'CZCS': pandas.date_range('1978-10-30', '1986-06-22'),
-        'GOCI': pandas.date_range('2010-06-01', datetime.date.today()),
+        'GOCI': pandas.date_range('2011-04-01', datetime.date.today()),
         'HICO': pandas.date_range('2009-09-25', '2014-09-13'),
         'OCTS': pandas.date_range('1996-11-01', '1997-06-30'),
         'SeaWiFS': pandas.date_range('1997-09-04', '2010-12-11'),
         'MODIS-Terra': pandas.date_range('2000-02-24', datetime.date.today()),
         'VIIRS-SNPP': pandas.date_range('2017-11-29', datetime.date.today()),
-        'VIIRS-JPSS1': pandas.date_range('2012-01-02', datetime.date.today())
+        'VIIRS-JPSS1': pandas.date_range('2017-11-29', datetime.date.today())
     }
 
     # This is encoded from John Moisan's "NEPAC Input Control.docx".
