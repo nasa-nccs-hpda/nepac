@@ -48,15 +48,15 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
     def testRun(self):
 
-        validDateTime = datetime.datetime(2004, 1, 1, 2, 10)
-        invalidDateTime = datetime.datetime(2004, 1, 1, 0, 5)
-
         # Test invalid date time
         with self.assertRaisesRegex(RuntimeError, 'File not found:'):
-            OceanColorRetriever('MODIS-Aqua', 'iPAR', invalidDateTime).run()
+            OceanColorRetriever('MODIS-Aqua', 'iPAR', datetime.datetime(
+                2004, 1, 1, 0, 5)).run()
 
         # Test valid date time
-        OceanColorRetriever('MODIS-Aqua', 'iPAR', validDateTime).run()
+        # We test multiple datasets due to differing date ranges
+        OceanColorRetriever('MODIS-Aqua', 'iPAR', datetime.datetime(
+            2004, 1, 1, 2, 10)).run()
         OceanColorRetriever('MODIS-Terra', 'iPAR', datetime.datetime(
             2001, 1, 1, 0, 0)).run()
         OceanColorRetriever('CZCS', 'Kd_490', datetime.datetime(
