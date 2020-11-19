@@ -86,21 +86,6 @@ class OceanColorRetriever(object):
         'VIIRS-JPSS1': '.SST'
     }
 
-    # This is encoded from observations of the
-    # file system and how the files are prefixed
-    MISSION_FILE_PREFIXES = {
-
-        'MODIS-Aqua': 'A',
-        'CZCS': 'C',
-        'GOCI': 'G',
-        'HICO': 'H',
-        'OCTS': 'O',
-        'SeaWiFS': 'S',
-        'MODIS-Terra': 'T',
-        'VIIRS-SNPP': 'V',
-        'VIIRS-JPSS1': 'V'
-    }
-
     # This is encoded from John Moisan's "NEPAC Input Control.docx".
     MISSION_LEVEL = 'L2'
 
@@ -118,9 +103,13 @@ class OceanColorRetriever(object):
     # run
     # -------------------------------------------------------------------------
     def run(self):
+        if self._mission == 'MODIS-Aqua' or self._mission == 'MODIS-Terra':
+            fileName = ''.join(
+                self._mission[6:7])
+        else:
+            fileName = ''.join(
+                self._mission[:1])
 
-        fileName = ''.join(
-            OceanColorRetriever.MISSION_FILE_PREFIXES[self._mission])
         fileName = fileName + self._dateTime.strftime("%Y") + \
             self._dateTime.strftime("%j") + \
             self._dateTime.strftime("%H") + \
@@ -130,12 +119,12 @@ class OceanColorRetriever(object):
             OceanColorRetriever.MISSION_FILE_SUFFIXES[self._mission] + \
             '.nc'
 
-        # Even though it appears you need a fancy url
-        # all files are downloaded from this path
+        # Even though it appears you need a full url including-
+        # date, year, etc., all files are downloaded from this path.
         fileUrl = os.path.join('ob', 'getfile')
         fileUrl = '/' + fileUrl + '/'
 
-        # Concat the filename and url to form a full request
+        # Concatenate the filename and url to form a full request.
         finalDownloadName = fileUrl + fileName
 
         # Download the data set.
@@ -143,11 +132,12 @@ class OceanColorRetriever(object):
                                 finalDownloadName,
                                 uncompress=True)
 
-        if request_status == 0 or request_status == 200:
+        if request_status == 0 or request_status == 200 \
+                or request_status == 304:
 
             return request_status
 
-        elif request_status == 404:
+        elif request_status >= 404:
 
             msg = 'File not found: ' + str(request_status) + \
                 '. ' + finalDownloadName

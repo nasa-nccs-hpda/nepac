@@ -54,7 +54,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
                 2004, 1, 1, 0, 5)).run()
 
         # Test valid date time
-        # We test multiple datasets due to differing date ranges
+        # We test multiple missions due to differing date ranges.
         OceanColorRetriever('MODIS-Aqua', 'iPAR', datetime.datetime(
             2004, 1, 1, 2, 10)).run()
         OceanColorRetriever('MODIS-Terra', 'iPAR', datetime.datetime(
