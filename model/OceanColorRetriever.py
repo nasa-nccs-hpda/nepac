@@ -105,6 +105,7 @@ class OceanColorRetriever(object):
     # run
     # -------------------------------------------------------------------------
     def run(self, outputDirectory='.'):
+
         if self._mission == 'MODIS-Aqua' or self._mission == 'MODIS-Terra':
             fileName = ''.join(
                 self._mission[6:7])
@@ -137,11 +138,13 @@ class OceanColorRetriever(object):
                                 localpath=outputDirectory,
                                 uncompress=True)
 
+        # File was retrieved, or file was already present.
         if request_status == 0 or request_status == 200 \
                 or request_status == 304:
 
             return request_status
 
+        # File not found (client error).
         elif request_status >= 404:
 
             msg = 'File not found: ' + str(request_status) + \
@@ -149,6 +152,7 @@ class OceanColorRetriever(object):
 
             raise RuntimeError(request_status, msg)
 
+        # Server error.
         elif request_status >= 500:
 
             msg = 'Server error:' + str(request_status) + \
@@ -169,9 +173,11 @@ class OceanColorRetriever(object):
     # _validate
     # -------------------------------------------------------------------------
     def _validate(self, mission, dateTime):
+
         dateRangeNoHMS = datetime.datetime(dateTime.year,
                                            dateTime.month,
                                            dateTime.day)
+
         # Validate mission.
         if mission not in OceanColorRetriever.MISSION_DATASETS:
 
