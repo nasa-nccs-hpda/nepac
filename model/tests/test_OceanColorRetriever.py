@@ -47,7 +47,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         assert(OceanColorRetriever('MODIS-Aqua',
                                    validDateTime).isValidDataSet(
                                        'MODIS-Aqua',
-                                       'somedataset') is False)
+                                       'invalid') is False)
 
         assert(OceanColorRetriever('MODIS-Aqua',
                                    validDateTime).isValidDataSet(
