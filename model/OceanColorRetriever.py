@@ -1,8 +1,9 @@
 import datetime
-from nepac.model.libraries.obdaac_download import httpdl
-import pandas
 import os
 
+import pandas
+
+from nepac.model.libraries.obdaac_download import httpdl
 
 # -----------------------------------------------------------------------------
 # class OceanColorRetriever
@@ -10,6 +11,8 @@ import os
 # https://oceandata.sci.gsfc.nasa.gov
 # https://oceancolor.gsfc.nasa.gov/data/download_methods/#api
 # -----------------------------------------------------------------------------
+
+
 class OceanColorRetriever(object):
 
     BASE_URL = 'oceandata.sci.gsfc.nasa.gov'
@@ -92,17 +95,16 @@ class OceanColorRetriever(object):
     # -------------------------------------------------------------------------
     # __init__
     # -------------------------------------------------------------------------
-    def __init__(self, mission, dataSet, dateTime):
+    def __init__(self, mission, dateTime):
 
-        self._validate(mission, dataSet, dateTime)
+        self._validate(mission, dateTime)
         self._dateTime = dateTime
         self._mission = mission
-        self._dataSet = dataSet
 
     # -------------------------------------------------------------------------
     # run
     # -------------------------------------------------------------------------
-    def run(self):
+    def run(self, outputDirectory='.'):
         if self._mission == 'MODIS-Aqua' or self._mission == 'MODIS-Terra':
             fileName = ''.join(
                 self._mission[6:7])
@@ -119,8 +121,10 @@ class OceanColorRetriever(object):
             OceanColorRetriever.MISSION_FILE_SUFFIXES[self._mission] + \
             '.nc'
 
+        # -----------------------------------------------------------
         # Even though it appears you need a full url including-
         # date, year, etc., all files are downloaded from this path.
+        # -----------------------------------------------------------
         fileUrl = os.path.join('ob', 'getfile')
         fileUrl = '/' + fileUrl + '/'
 
@@ -130,6 +134,7 @@ class OceanColorRetriever(object):
         # Download the data set.
         request_status = httpdl(OceanColorRetriever.BASE_URL,
                                 finalDownloadName,
+                                localpath=outputDirectory,
                                 uncompress=True)
 
         if request_status == 0 or request_status == 200 \
@@ -152,9 +157,18 @@ class OceanColorRetriever(object):
             raise RuntimeError(request_status, msg)
 
     # -------------------------------------------------------------------------
+    # isValidDataSet
+    # -------------------------------------------------------------------------
+    def isValidDataSet(self, mission, dataset):
+        if dataset in OceanColorRetriever.MISSION_DATASETS[mission]:
+            return True
+        else:
+            return False
+
+    # -------------------------------------------------------------------------
     # _validate
     # -------------------------------------------------------------------------
-    def _validate(self, mission, dataSet, dateTime):
+    def _validate(self, mission, dateTime):
         dateRangeNoHMS = datetime.datetime(dateTime.year,
                                            dateTime.month,
                                            dateTime.day)
@@ -167,16 +181,7 @@ class OceanColorRetriever(object):
 
             raise RuntimeError(msg)
 
-        # Validate data sets.
-        if dataSet not in OceanColorRetriever.MISSION_DATASETS[mission]:
-
-            msg = 'Invalid data set: ' + str(dataSet) + \
-                  '.  Valid missions: ' + \
-                  str(OceanColorRetriever.MISSION_DATASETS[mission])
-
-            raise RuntimeError(msg)
-
-        # Validate date is in date range of dataset
+        # Validate date is in date range of mission
         if dateRangeNoHMS not in OceanColorRetriever.MISSION_DATES[mission]:
 
             msg = 'Invalid date: ' + str(dateTime) + \
