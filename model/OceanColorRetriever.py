@@ -95,16 +95,17 @@ class OceanColorRetriever(object):
     # -------------------------------------------------------------------------
     # __init__
     # -------------------------------------------------------------------------
-    def __init__(self, mission, dateTime):
+    def __init__(self, mission, dateTime, outputDirectory='.'):
 
         self._validate(mission, dateTime)
         self._dateTime = dateTime
         self._mission = mission
+        self._outputDirectory = outputDirectory
 
     # -------------------------------------------------------------------------
     # run
     # -------------------------------------------------------------------------
-    def run(self, outputDirectory='.'):
+    def run(self):
 
         if self._mission == 'MODIS-Aqua' or self._mission == 'MODIS-Terra':
             fileName = ''.join(
@@ -135,7 +136,7 @@ class OceanColorRetriever(object):
         # Download the data set.
         request_status = httpdl(OceanColorRetriever.BASE_URL,
                                 finalDownloadName,
-                                localpath=outputDirectory,
+                                localpath=self._outputDirectory,
                                 uncompress=True)
 
         # File was retrieved, or file was already present.
@@ -163,7 +164,8 @@ class OceanColorRetriever(object):
     # -------------------------------------------------------------------------
     # isValidDataSet
     # -------------------------------------------------------------------------
-    def isValidDataSet(self, mission, dataset):
+    @staticmethod
+    def isValidDataSet(mission, dataset):
         if dataset in OceanColorRetriever.MISSION_DATASETS[mission]:
             return True
         else:
