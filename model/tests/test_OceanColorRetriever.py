@@ -1,5 +1,6 @@
 import datetime
 import shutil
+import time
 import unittest
 
 from nepac.model.OceanColorRetriever import OceanColorRetriever
@@ -59,7 +60,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
     def testRun(self):
 
-        outputDirectory = 'tmpTestOutputDirectory'
+        outputDirectory = 'tmpTestOutputDirectory' + str(time.time())
 
         # Test invalid date time
         with self.assertRaisesRegex(RuntimeError, 'File not found:'):
