@@ -143,7 +143,8 @@ class OceanColorRetriever(object):
         if request_status == 0 or request_status == 200 \
                 or request_status == 304:
 
-            return request_status
+            #print(os.path.join(os.getcwd(), self._outputDirectory, fileName))
+            return(os.path.join(os.getcwd(), self._outputDirectory, fileName))
 
         # File not found (client error).
         else:
