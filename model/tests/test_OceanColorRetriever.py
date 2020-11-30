@@ -43,13 +43,13 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
     def testIsValidDataSet(self):
 
-        assert(OceanColorRetriever.isValidDataSet(
+        self.assertFalse(OceanColorRetriever.isValidDataSet(
             'MODIS-Aqua',
-            'invalid') is False)
+            'invalid'))
 
-        assert(OceanColorRetriever.isValidDataSet(
+        self.assertTrue(OceanColorRetriever.isValidDataSet(
             'MODIS-Aqua',
-            'iPAR') is True)
+            'iPAR'))
 
     # -------------------------------------------------------------------------
     # testRun
@@ -58,24 +58,36 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         tmp_directory = 'tmpTestOutputDirectory' + str(time.time())
 
-        # Test invalid date time
+        # Test invalid date time, which results in a 400 level error.
         with self.assertRaisesRegex(RuntimeError, 'File not found:'):
-            OceanColorRetriever('MODIS-Aqua',
-                                datetime.datetime(
-                                    2004, 1, 1, 0, 5),
-                                tmp_directory).run()
+            ocr_0 = OceanColorRetriever('MODIS-Aqua',
+                                        datetime.datetime(2004, 1, 1, 0, 5),
+                                        tmp_directory)
+            ocr_0.run()
 
-        # -----------------------------------------------------------
+        # -------------------------------------------------------------------------
         # Test valid date time.
         # We test multiple missions due to differing date ranges.
-        # -----------------------------------------------------------
-        OceanColorRetriever('MODIS-Aqua', datetime.datetime(
-            2004, 1, 1, 2, 10), tmp_directory).run()
-        OceanColorRetriever('MODIS-Terra', datetime.datetime(
-            2001, 1, 1, 0, 0), tmp_directory).run()
-        OceanColorRetriever('CZCS', datetime.datetime(
-            1978, 10, 30, 12, 48, 34), tmp_directory).run()
-        OceanColorRetriever('GOCI', datetime.datetime(
-            2011, 4, 1, 00, 16, 41), tmp_directory).run()
+        # -------------------------------------------------------------------------
+        ocr_1 = OceanColorRetriever('MODIS-Aqua',
+                                    datetime.datetime(2004, 1, 1, 2, 10),
+                                    tmp_directory)
+        ocr_1.run
+
+        ocr_2 = OceanColorRetriever('MODIS-Terra',
+                                    datetime.datetime(2001, 1, 1, 0, 0),
+                                    tmp_directory)
+        ocr_2.run()
+
+        ocr_3 = OceanColorRetriever('CZCS',
+                                    datetime.datetime(
+                                        1978, 10, 30, 12, 48, 34),
+                                    tmp_directory)
+        ocr_3.run()
+
+        ocr_4 = OceanColorRetriever('GOCI',
+                                    datetime.datetime(2011, 4, 1, 00, 16, 41),
+                                    tmp_directory)
+        ocr_4.run()
 
         shutil.rmtree(tmp_directory, ignore_errors=True)

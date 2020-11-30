@@ -123,10 +123,10 @@ class OceanColorRetriever(object):
             OceanColorRetriever.MISSION_FILE_SUFFIXES[self._mission] + \
             '.nc'
 
-        # -----------------------------------------------------------
+        # -----------------------------------------------------------------------------
         # Even though it appears you need a full url including-
         # date, year, etc., all files are downloaded from this path.
-        # -----------------------------------------------------------
+        # -----------------------------------------------------------------------------
         fileUrl = os.path.join('ob', 'getfile')
         fileUrl = '/' + fileUrl + '/'
 
