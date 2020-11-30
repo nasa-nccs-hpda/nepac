@@ -146,18 +146,10 @@ class OceanColorRetriever(object):
             return request_status
 
         # File not found (client error).
-        elif request_status >= 404:
+        else:
 
-            msg = 'File not found: ' + str(request_status) + \
+            msg = 'Client or server error: ' + str(request_status) + \
                 '. ' + finalDownloadName
-
-            raise RuntimeError(request_status, msg)
-
-        # Server error.
-        elif request_status >= 500:
-
-            msg = 'Server error:' + str(request_status) + \
-                '. '
 
             raise RuntimeError(request_status, msg)
 

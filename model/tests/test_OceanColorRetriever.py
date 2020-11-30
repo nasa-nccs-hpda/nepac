@@ -59,7 +59,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         tmp_directory = 'tmpTestOutputDirectory' + str(time.time())
 
         # Test invalid date time, which results in a 400 level error.
-        with self.assertRaisesRegex(RuntimeError, 'File not found:'):
+        with self.assertRaisesRegex(RuntimeError, 'Client or server error:'):
             ocr_0 = OceanColorRetriever('MODIS-Aqua',
                                         datetime.datetime(2004, 1, 1, 0, 5),
                                         tmp_directory)
