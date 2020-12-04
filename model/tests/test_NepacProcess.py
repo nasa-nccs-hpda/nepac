@@ -17,10 +17,16 @@ from nepac.model.NepacProcess import NepacProcess
 
 class NepacProcessTestCase(unittest.TestCase):
 
-    IN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                           'nepacInput.csv')
+    IN_FILE1 = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            'nepacInputOne.csv')
 
-    MISSION_DICT = {'MODIS-Aqua': ['iPAR']}
+    IN_FILE2 = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            'nepacInputTwo.csv')
+
+    MISSION_DICT = {'MODIS-Aqua': ['Rrs_443', 'Rrs_412', 'ipar'],
+                    'MODIS-Terra': ['Rrs_443', 'ipar']}
+
+    BAD_MISSION_DICT = {'MODIS-Aqua': ['Rrs_440']}
 
     # -------------------------------------------------------------------------
     # testInit
@@ -35,17 +41,23 @@ class NepacProcessTestCase(unittest.TestCase):
         # Valid input file, no mission dictionary.
         with self.assertRaisesRegex(ValueError, 'A mission-to'):
 
-            NepacProcess(NepacProcessTestCase.IN_FILE, None, '.')
+            NepacProcess(NepacProcessTestCase.IN_FILE1, None, '.')
 
         # Valid input file and mission dictionary, invalid output directory.
         with self.assertRaisesRegex(ValueError, 'An output directory'):
 
-            NepacProcess(NepacProcessTestCase.IN_FILE,
+            NepacProcess(NepacProcessTestCase.IN_FILE1,
                          NepacProcessTestCase.MISSION_DICT,
                          None)
 
+        with self.assertRaisesRegex(ValueError, 'Invalid data set'):
+
+            NepacProcess(NepacProcessTestCase.IN_FILE1,
+                         NepacProcessTestCase.BAD_MISSION_DICT,
+                         '.')
+
         # Valid everything.
-        NepacProcess(NepacProcessTestCase.IN_FILE,
+        NepacProcess(NepacProcessTestCase.IN_FILE1,
                      NepacProcessTestCase.MISSION_DICT,
                      '.')
 
@@ -54,8 +66,13 @@ class NepacProcessTestCase(unittest.TestCase):
     # -------------------------------------------------------------------------
     def testRun(self):
 
-        np = NepacProcess(NepacProcessTestCase.IN_FILE,
-                          NepacProcessTestCase.MISSION_DICT,
-                          '.')
+        # Valid everything
+        np1 = NepacProcess(NepacProcessTestCase.IN_FILE1,
+                           NepacProcessTestCase.MISSION_DICT,
+                           '.')
+        np1.run()
 
-        np.run()
+        np2 = NepacProcess(NepacProcessTestCase.IN_FILE2,
+                           NepacProcessTestCase.MISSION_DICT,
+                           '.')
+        np2.run()

@@ -3,10 +3,12 @@ import csv
 import datetime
 import errno
 import os
-import shutil
 import tempfile
+import struct
 
 from osgeo.osr import SpatialReference
+from osgeo.gdal import GDT_Float32
+from osgeo.gdal import Translate
 
 from core.model.BaseFile import BaseFile
 from core.model.GeospatialImageFile import GeospatialImageFile
@@ -91,26 +93,97 @@ class NepacProcess(object):
 
     # -------------------------------------------------------------------------
     # run
+    #
+    # The data returned from self._processTimeData is on a per-mission basis.
+    # This is done for the idea that it doesn't matter whi
     # -------------------------------------------------------------------------
     def run(self):
 
         # Read the input file and aggregate by mission.
-        timeDateToLoc = self._readInputFile()
+        timeDateToLocChl = self._readInputFile()
 
         # Get the pixel values for each mission.
-        for timeDate in timeDateToLoc:
-            self._processTimeDate(timeDate, timeDateToLoc[timeDate])
+        rowsToWrite = []
+
+        for timeDate in timeDateToLocChl:
+
+            # -------------------------------------------------------------------------
+            # The data returned from self._processTimeDate takes the form of:
+            # { missionName1 :
+            #      {
+            #          (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
+            #          (time2, data2, lat2, long2, Chl-A2) : [pVal1, pVal2]
+            #       }
+            #   missionName2 :
+            #       {
+            #           (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
+            #       }
+            # }
+            # This data structure needs to be reduced to one key per row with
+            # aggregated values.
+            #
+            # [time1, date1, lat1, long1, Chl-A1,
+            #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
+            # [time2, date2, lat2, long2, Chl-a2,
+            #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
+            # -------------------------------------------------------------------------
+
+            ex = self._processTimeDate(timeDate, timeDateToLocChl[timeDate])
+            rowsPerTimeDate = []
+
+            for i, (missionKey, missionVals) in enumerate(ex.items()):
+                for k, (rowKey, rowValues) in enumerate(missionVals.items()):
+
+                    # First time seeing these keys, new row.
+                    if i == 0:
+                        newRow = []
+                        newRow.extend(list(rowKey))
+                        newRow.extend(rowValues)
+                        rowsPerTimeDate.append(newRow)
+
+                    # Keys are already present, append data.
+                    else:
+                        rowsPerTimeDate[k].extend(rowValues)
+
+            # Write this timeDate's data rows to the overall rows.
+            rowsToWrite.extend(rowsPerTimeDate)
 
         # Write the output file.
+        outFileName = os.path.splitext(
+            os.path.basename(self._inputFile.fileName()))
+        outFileName = outFileName[0] + '_output' + outFileName[1]
+
+        outputFile = os.path.join(self._outputDir,
+                                  outFileName)
+
+        # Start writing to CSV
+        with open(outputFile, 'w') as csvfile:
+
+            csvwriter = csv.writer(csvfile)
+
+            # Start with base fields
+            fields = ['Time[hhmm]',
+                      'Date[mmddyyyy]',
+                      'Lat.[-90—90 deg.]',
+                      'Long.[0-360.E]',
+                      'Chl-a']
+
+            # Sort keys in missions to match incoming data, add to fields.
+            for mission in sorted(self._missions.keys()):
+                for subDataSet in self._missions[mission]:
+                    fields.append(str(mission+'-'+subDataSet))
+
+            csvwriter.writerow(fields)
+            csvwriter.writerows(rowsToWrite)
 
     # -------------------------------------------------------------------------
     # _readInputFile
     #
     # The input file looks like, ...
     #
-    # time1, date1, lat1, lon1, observation1
-    # time2, date2, lat2, lon2, observation2
-    # time1, date1, lat2, lon1, observation3
+    # time1, date1, lat1, lon1, obs1
+    # time2, date2, lat2, lon2, obs2
+    # time1, date1, lat2, lon1, obs3
     #
     # ... and the DAAC's file names are based on date and time, so aggregate
     # the observations by date and time.  That allows us to get pixel values
@@ -119,13 +192,14 @@ class NepacProcess(object):
     #
     # The result of reading the input file is an aggregated dictionary.
     # {
-    #     (time1, date1): [(lat1, lon1), (lat2, lon1)],
-    #     (time2, date2): [(lat2, lon2)]
+    #     (time1, date1): [(lat1, lon1, obs1), (lat2, lon1, obs3)],
+    #     (time2, date2): [(lat2, lon2, obs2)]
     # }
     # -------------------------------------------------------------------------
+
     def _readInputFile(self):
 
-        timeDateToLoc = {}
+        timeDateToLocChl = {}
 
         with open(self._inputFile.fileName()) as csvFile:
 
@@ -144,14 +218,15 @@ class NepacProcess(object):
                 timeDateKey = (row['Time[hhmm]'].strip(),
                                row['Date[mmddyyyy]'].strip())
 
-                if timeDateKey not in timeDateToLoc:
-                    timeDateToLoc[timeDateKey] = []
+                if timeDateKey not in timeDateToLocChl:
+                    timeDateToLocChl[timeDateKey] = []
 
-                timeDateToLoc[timeDateKey]. \
+                timeDateToLocChl[timeDateKey]. \
                     append((row['Lat.[-90—90 deg.]'].strip(),
-                            row['Long.[0-360.E]'].strip()))
+                            row['Long.[0-360.E]'].strip(),
+                            row['Chl-a'].strip()))
 
-        return timeDateToLoc
+        return timeDateToLocChl
 
     # -------------------------------------------------------------------------
     # processTimeDate
@@ -161,23 +236,53 @@ class NepacProcess(object):
     # requested will be data sets extracted, and the pixel values retrieved.
     #
     # This method can be distributed.
+    #
+    # Data from self._processMission is returned in a per-key manner, ...
+    #
+    # { (time, data, lat, long, Chl-A) : [pVal1, pVal2, pVal3]}
+    #
+    # This is added to a per-mission dictionary, ...
+    #
+    # { missionName1 :
+    #      {
+    #          (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
+    #          (time2, data2, lat2, long2, Chl-A2) : [pVal1, pVal2]
+    #       }
+    #   missionName2 :
+    #       {
+    #           (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
+    #       }
+    # }
     # -------------------------------------------------------------------------
-    def _processTimeDate(self, timeDate, locs):
+    def _processTimeDate(self, timeDate, locsChls):
 
         print('Processing', timeDate)
 
+        valuesPerMissionDict = {}
+
         for mission in self._missions:
-            self._processMission(mission, timeDate, locs)
+
+            valuesPerMissionDict[mission] = \
+                self._processMission(mission,
+                                     timeDate,
+                                     locsChls)
+
+        sortedValuesPerMissionDict = dict(
+            sorted(valuesPerMissionDict.items(),
+                   key=lambda item: item[0]))
+
+        return sortedValuesPerMissionDict
 
     # -------------------------------------------------------------------------
     # processMission
     #
     # This can be distributed.
     # -------------------------------------------------------------------------
-    def _processMission(self, mission, timeDate, locs):
+    def _processMission(self, mission, timeDate, locsChls):
 
         print('Processing mission', mission)
-
+        print('timeDate: ', timeDate)
+        print('locs and chl: ', locsChls)
         # Get the image file.
         hour = int(timeDate[0][:2])
         minute = int(timeDate[0][2:])
@@ -192,7 +297,6 @@ class NepacProcess(object):
         # Instantiate a GeospatialImageFile to access its data sets.
         srs = SpatialReference()
         srs.ImportFromEPSG(4326)
-
         image = GeospatialImageFile(missionFile, srs)
         subs = image._getDataset().GetSubDatasets()
 
@@ -201,29 +305,59 @@ class NepacProcess(object):
         # probably not be distributed.  There would be multiple processes
         # trying to open the same image.
         # ---
-        dsDir = tempfile.gettempdir()
         dataSets = self._missions[mission]
+        nepacOutputDict = {}
 
         for sub in subs:
 
             datasetName = sub[0]
             var = datasetName.split(':')[2]
+            cleanedVar = datasetName.split('_data/')[1]
+
             print('Seeking', var, 'in', dataSets)
 
-            if var in dataSets:
+            if cleanedVar in dataSets:
 
                 print('Found', var, 'in', dataSets)
-                name = os.path.join(dsDir, var + '.nc')
+
+                name = tempfile.mkstemp()[1]
+
+                Translate(name, datasetName)
                 dsImage = GeospatialImageFile(name, srs)
 
-                for loc in locs:
+                for locChl in locsChls:
 
-                    imagePt = dsImage.groundToImage(loc[0], loc[1])
+                    imagePt = dsImage.groundToImage(float(locChl[0]),
+                                                    float(locChl[1]))
 
-                    val = dsImage._getDataset().ReadRaster(imagePt[0],  # x
-                                                           imagePt[1],  # y
-                                                           1,
-                                                           1)
+                    val = dsImage._getDataset().\
+                        ReadRaster(imagePt[0],
+                                   imagePt[1],
+                                   xsize=1,
+                                   ysize=1,
+                                   buf_type=GDT_Float32)
+
+                    # Byte form to float
+                    [val] = struct.unpack('f', val)
+
+                    timeDateLocChlKey = (timeDate[0],
+                                         timeDate[1],
+                                         locChl[0],
+                                         locChl[1],
+                                         locChl[2])
+
+                    # New key to be made, appends vals
+                    if timeDateLocChlKey not in nepacOutputDict:
+
+                        nepacOutputDict[timeDateLocChlKey] = []
+                        nepacOutputDict[timeDateLocChlKey].append(val)
+
+                    # Key has already been added, append vals
+                    else:
+                        nepacOutputDict[timeDateLocChlKey].append(val)
 
                 dsImage = None
-                shutil.remove(name)
+                os.remove(name)
+
+        os.remove(missionFile)
+        return nepacOutputDict

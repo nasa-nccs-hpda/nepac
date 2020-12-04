@@ -49,7 +49,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         self.assertTrue(OceanColorRetriever.isValidDataSet(
             'MODIS-Aqua',
-            'iPAR'))
+            'ipar'))
 
     # -------------------------------------------------------------------------
     # testRun

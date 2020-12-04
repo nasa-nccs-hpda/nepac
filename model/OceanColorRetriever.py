@@ -20,7 +20,7 @@ class OceanColorRetriever(object):
     # This is encoded from John Moisan's "NEPAC Input Control.docx".
     MISSION_DATASETS = {
 
-        'MODIS-Aqua': ['iPAR', 'Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412',
+        'MODIS-Aqua': ['ipar', 'Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412',
                        'Rrs_443', 'Rrs_469', 'Rrs_488', 'Rrs_531', 'Rrs_547',
                        'Rrs_555', 'Rrs_645', 'Rrs_667', 'Rrs_678'],
 
@@ -50,7 +50,7 @@ class OceanColorRetriever(object):
         'SeaWiFS': ['Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412', 'Rrs_443',
                     'Rrs_490', 'Rrs_555', 'Rrs_670'],
 
-        'MODIS-Terra': ['iPAR', 'Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412',
+        'MODIS-Terra': ['ipar', 'Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412',
                         'Rrs_443', 'Rrs_469', 'Rrs_488', 'Rrs_531', 'Rrs_547',
                         'Rrs_555', 'Rrs_645', 'Rrs_667', 'Rrs_678'],
 
@@ -143,8 +143,7 @@ class OceanColorRetriever(object):
         if request_status == 0 or request_status == 200 \
                 or request_status == 304:
 
-            #print(os.path.join(os.getcwd(), self._outputDirectory, fileName))
-            return(os.path.join(os.getcwd(), self._outputDirectory, fileName))
+            return os.path.join(self._outputDirectory, fileName)
 
         # File not found (client error).
         else:
