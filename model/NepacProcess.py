@@ -170,7 +170,7 @@ class NepacProcess(object):
 
             # Sort keys in missions to match incoming data, add to fields.
             for mission in sorted(self._missions.keys()):
-                for subDataSet in self._missions[mission]:
+                for subDataSet in sorted(self._missions[mission]):
                     fields.append(str(mission+'-'+subDataSet))
 
             csvwriter.writerow(fields)
@@ -308,7 +308,7 @@ class NepacProcess(object):
         dataSets = self._missions[mission]
         nepacOutputDict = {}
 
-        for sub in subs:
+        for sub in sorted(subs):
 
             datasetName = sub[0]
             var = datasetName.split(':')[2]
