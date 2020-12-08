@@ -72,7 +72,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         ocr_1 = OceanColorRetriever('MODIS-Aqua',
                                     datetime.datetime(2004, 1, 1, 2, 10),
                                     tmp_directory)
-        ocr_1.run
+        ocr_1.run()
 
         ocr_2 = OceanColorRetriever('MODIS-Terra',
                                     datetime.datetime(2001, 1, 1, 0, 0),

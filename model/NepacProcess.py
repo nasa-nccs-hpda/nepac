@@ -361,3 +361,4 @@ class NepacProcess(object):
 
         os.remove(missionFile)
         return nepacOutputDict
+
