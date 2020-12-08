@@ -20,7 +20,7 @@ class OceanColorRetriever(object):
     # This is encoded from John Moisan's "NEPAC Input Control.docx".
     MISSION_DATASETS = {
 
-        'MODIS-Aqua': ['ipar', 'Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412',
+        'MODIS-Aqua': ['ipar', 'Kd_490', 'par', 'pic', 'poc', 'Rrs_412',
                        'Rrs_443', 'Rrs_469', 'Rrs_488', 'Rrs_531', 'Rrs_547',
                        'Rrs_555', 'Rrs_645', 'Rrs_667', 'Rrs_678'],
 
@@ -29,7 +29,7 @@ class OceanColorRetriever(object):
         'GOCI': ['Kd_490', 'POC', 'Rrs_412', 'Rrs_443', 'Rrs_490', 'Rrs_555',
                  'Rrs_660', 'Rrs_680'],
 
-        'HICO': ['Kd_490', 'PIC', 'POC', 'Rrs_353', 'Rsf_358', 'Rrs_364',
+        'HICO': ['Kd_490', 'pic', 'poc', 'Rrs_353', 'Rsf_358', 'Rrs_364',
                  'Rrs_370', 'Rrs_375', 'Rrs_381', 'Rrs_387', 'Rrs_393',
                  'Rrs_398', 'Rrs_404', 'Rrs_410', 'Rrs_416', 'Rrs_421',
                  'Rrs_427', 'Rrs_433', 'Rrs_438', 'Rrs_444', 'Rrs_450',
@@ -44,20 +44,20 @@ class OceanColorRetriever(object):
                  'Rrs_685', 'Rrs_690', 'Rrs_696', 'Rrs_702', 'Rrs_708',
                  'Rrs_713', 'Rrs_719'],
 
-        'OCTS': ['Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412', 'Rrs_443',
+        'OCTS': ['Kd_490', 'par', 'pic', 'poc', 'Rrs_412', 'Rrs_443',
                  'Rrs_490', 'Rrs_516', 'Rrs_565', 'Rrs_667'],
 
-        'SeaWiFS': ['Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412', 'Rrs_443',
+        'SeaWiFS': ['Kd_490', 'par', 'pic', 'poc', 'Rrs_412', 'Rrs_443',
                     'Rrs_490', 'Rrs_555', 'Rrs_670'],
 
-        'MODIS-Terra': ['ipar', 'Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_412',
+        'MODIS-Terra': ['ipar', 'Kd_490', 'par', 'pic', 'poc', 'Rrs_412',
                         'Rrs_443', 'Rrs_469', 'Rrs_488', 'Rrs_531', 'Rrs_547',
                         'Rrs_555', 'Rrs_645', 'Rrs_667', 'Rrs_678'],
 
-        'VIIRS-SNPP': ['Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_411', 'Rrs_445',
+        'VIIRS-SNPP': ['Kd_490', 'par', 'pic', 'poc', 'Rrs_411', 'Rrs_445',
                        'Rrs_489', 'Rrs_556', 'Rrs_667'],
 
-        'VIIRS-JPSS1': ['Kd_490', 'PAR', 'PIC', 'POC', 'Rrs_411', 'Rrs_445',
+        'VIIRS-JPSS1': ['Kd_490', 'par', 'pic', 'poc', 'Rrs_411', 'Rrs_445',
                         'Rrs_489', 'Rrs_556', 'Rrs_667'],
     }
 
