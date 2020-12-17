@@ -1,4 +1,3 @@
-
 import csv
 import datetime
 import errno
@@ -13,6 +12,7 @@ from osgeo.gdal import Translate
 from core.model.BaseFile import BaseFile
 from core.model.GeospatialImageFile import GeospatialImageFile
 from nepac.model.OceanColorRetriever import OceanColorRetriever
+
 
 # -----------------------------------------------------------------------------
 # class NepacProcess
@@ -37,8 +37,6 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # time, date, [(lat, lon), (lat, lon), ...]
 # ...
 # -----------------------------------------------------------------------------
-
-
 class NepacProcess(object):
 
     # -------------------------------------------------------------------------
@@ -107,7 +105,7 @@ class NepacProcess(object):
 
         for timeDate in timeDateToLocChl:
 
-            # -------------------------------------------------------------------------
+            # ----------------------------------------------------------------
             # The data returned from self._processTimeDate takes the form of:
             # { missionName1 :
             #      {
@@ -126,9 +124,12 @@ class NepacProcess(object):
             #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
             # [time2, date2, lat2, long2, Chl-a2,
             #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
-            # -------------------------------------------------------------------------
+            # ----------------------------------------------------------------
 
-            ex = self._processTimeDate(timeDate, timeDateToLocChl[timeDate])
+            ex = self._processTimeDate(timeDate,
+                                       timeDateToLocChl[timeDate],
+                                       self._missions,
+                                       self._outputDir)
             rowsPerTimeDate = []
 
             for i, (missionKey, missionVals) in enumerate(ex.items()):
@@ -137,7 +138,8 @@ class NepacProcess(object):
                     # First time seeing these keys, new row.
                     if i == 0:
                         newRow = []
-                        newRow.extend(list(rowKey))
+                        rowKeyTuple = tuple(rowKey.split(","))
+                        newRow.extend(list(rowKeyTuple))
                         newRow.extend(rowValues)
                         rowsPerTimeDate.append(newRow)
 
@@ -176,7 +178,7 @@ class NepacProcess(object):
             csvwriter.writerow(fields)
             csvwriter.writerows(rowsToWrite)
 
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     # _readInputFile
     #
     # The input file looks like, ...
@@ -195,8 +197,7 @@ class NepacProcess(object):
     #     (time1, date1): [(lat1, lon1, obs1), (lat2, lon1, obs3)],
     #     (time2, date2): [(lat2, lon2, obs2)]
     # }
-    # -------------------------------------------------------------------------
-
+    # ------------------------------------------------------------------------
     def _readInputFile(self):
 
         timeDateToLocChl = {}
@@ -228,7 +229,7 @@ class NepacProcess(object):
 
         return timeDateToLocChl
 
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     # processTimeDate
     #
     # For each row in the observations, or each time/date in the aggregate,
@@ -253,19 +254,23 @@ class NepacProcess(object):
     #           (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
     #       }
     # }
-    # -------------------------------------------------------------------------
-    def _processTimeDate(self, timeDate, locsChls):
+    # ------------------------------------------------------------------------
+    @staticmethod
+    def _processTimeDate(timeDate, locsChls, missions, outputDir):
 
         print('Processing', timeDate)
 
         valuesPerMissionDict = {}
 
-        for mission in self._missions:
+        for mission in missions:
 
-            valuesPerMissionDict[mission] = \
-                self._processMission(mission,
-                                     timeDate,
-                                     locsChls)
+            dictOutput = \
+                NepacProcess._processMission(mission,
+                                             timeDate,
+                                             locsChls,
+                                             missions,
+                                             outputDir)
+            valuesPerMissionDict.update(dictOutput)
 
         sortedValuesPerMissionDict = dict(
             sorted(valuesPerMissionDict.items(),
@@ -273,12 +278,13 @@ class NepacProcess(object):
 
         return sortedValuesPerMissionDict
 
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     # processMission
     #
     # This can be distributed.
-    # -------------------------------------------------------------------------
-    def _processMission(self, mission, timeDate, locsChls):
+    # ------------------------------------------------------------------------
+    @staticmethod
+    def _processMission(mission, timeDate, locsChls, missions, outputDir):
 
         print('Processing mission', mission)
         print('timeDate: ', timeDate)
@@ -291,7 +297,7 @@ class NepacProcess(object):
         year = int(timeDate[1][4:])
         dt = datetime.datetime(year, month, day, hour, minute)
 
-        ocr = OceanColorRetriever(mission, dt, self._outputDir)
+        ocr = OceanColorRetriever(mission, dt, outputDir)
         missionFile = ocr.run()
 
         # Instantiate a GeospatialImageFile to access its data sets.
@@ -305,7 +311,7 @@ class NepacProcess(object):
         # probably not be distributed.  There would be multiple processes
         # trying to open the same image.
         # ---
-        dataSets = self._missions[mission]
+        dataSets = missions[mission]
         nepacOutputDict = {}
 
         for sub in sorted(subs):
@@ -340,11 +346,13 @@ class NepacProcess(object):
                     # Byte form to float
                     [val] = struct.unpack('f', val)
 
-                    timeDateLocChlKey = (timeDate[0],
-                                         timeDate[1],
-                                         locChl[0],
-                                         locChl[1],
-                                         locChl[2])
+                    timeDateLocChlKey = (
+                        timeDate[0],
+                        timeDate[1],
+                        locChl[0],
+                        locChl[1],
+                        locChl[2])
+                    timeDateLocChlKey = ','.join(timeDateLocChlKey)
 
                     # New key to be made, appends vals
                     if timeDateLocChlKey not in nepacOutputDict:
@@ -359,6 +367,10 @@ class NepacProcess(object):
                 dsImage = None
                 os.remove(name)
 
-        os.remove(missionFile)
-        return nepacOutputDict
+        if os.path.exists(missionFile):
+            os.remove(missionFile)
 
+        nepacMissionOutput = {}
+        nepacMissionOutput[mission] = nepacOutputDict
+
+        return nepacMissionOutput

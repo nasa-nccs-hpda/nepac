@@ -1,20 +1,19 @@
-
 import os
 import unittest
 
 from nepac.model.NepacProcess import NepacProcess
 
+
 # -----------------------------------------------------------------------------
 # class NepacProcessTestCase
 #
-# singularity shell -B /att /att/nobackup/iluser/containers/ilab-core-5.0.0.simg
+# singularity shell -B /att \
+# /att/nobackup/iluser/containers/ilab-core-5.0.0.simg
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/core:`pwd`/nepac
 # python -m unittest discover model/tests/
 # python -m unittest nepac.model.tests.test_NepacProcess
 # -----------------------------------------------------------------------------
-
-
 class NepacProcessTestCase(unittest.TestCase):
 
     IN_FILE1 = os.path.join(os.path.dirname(os.path.abspath(__file__)),

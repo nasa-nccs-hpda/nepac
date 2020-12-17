@@ -5,6 +5,7 @@ import unittest
 
 from nepac.model.OceanColorRetriever import OceanColorRetriever
 
+
 # -----------------------------------------------------------------------------
 # class OceanColorRetrieverTestCase
 #
@@ -15,8 +16,6 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # python -m unittest discover model/tests/
 # python -m unittest model.tests.test_OceanColorRetriever
 # -----------------------------------------------------------------------------
-
-
 class OceanColorRetrieverTestCase(unittest.TestCase):
 
     # -------------------------------------------------------------------------
@@ -65,10 +64,10 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
                                         tmp_directory)
             ocr_0.run()
 
-        # -------------------------------------------------------------------------
+        # --------------------------------------------------------------------
         # Test valid date time.
         # We test multiple missions due to differing date ranges.
-        # -------------------------------------------------------------------------
+        # --------------------------------------------------------------------
         ocr_1 = OceanColorRetriever('MODIS-Aqua',
                                     datetime.datetime(2004, 1, 1, 2, 10),
                                     tmp_directory)

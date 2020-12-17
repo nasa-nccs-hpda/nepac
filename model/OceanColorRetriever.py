@@ -5,14 +5,13 @@ import pandas
 
 from nepac.model.libraries.obdaac_download import httpdl
 
+
 # -----------------------------------------------------------------------------
 # class OceanColorRetriever
 #
 # https://oceandata.sci.gsfc.nasa.gov
 # https://oceancolor.gsfc.nasa.gov/data/download_methods/#api
 # -----------------------------------------------------------------------------
-
-
 class OceanColorRetriever(object):
 
     BASE_URL = 'oceandata.sci.gsfc.nasa.gov'
@@ -123,10 +122,10 @@ class OceanColorRetriever(object):
             OceanColorRetriever.MISSION_FILE_SUFFIXES[self._mission] + \
             '.nc'
 
-        # -----------------------------------------------------------------------------
+        # --------------------------------------------------------------------
         # Even though it appears you need a full url including-
         # date, year, etc., all files are downloaded from this path.
-        # -----------------------------------------------------------------------------
+        # --------------------------------------------------------------------
         fileUrl = os.path.join('ob', 'getfile')
         fileUrl = '/' + fileUrl + '/'
 
