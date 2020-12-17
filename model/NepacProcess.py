@@ -1,4 +1,3 @@
-
 import csv
 import datetime
 import errno
@@ -13,6 +12,7 @@ from osgeo.gdal import Translate
 from core.model.BaseFile import BaseFile
 from core.model.GeospatialImageFile import GeospatialImageFile
 from nepac.model.OceanColorRetriever import OceanColorRetriever
+
 
 # -----------------------------------------------------------------------------
 # class NepacProcess
@@ -37,8 +37,6 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # time, date, [(lat, lon), (lat, lon), ...]
 # ...
 # -----------------------------------------------------------------------------
-
-
 class NepacProcess(object):
 
     # -------------------------------------------------------------------------
@@ -107,7 +105,7 @@ class NepacProcess(object):
 
         for timeDate in timeDateToLocChl:
 
-            # -------------------------------------------------------------------------
+            # ----------------------------------------------------------------
             # The data returned from self._processTimeDate takes the form of:
             # { missionName1 :
             #      {
@@ -126,7 +124,7 @@ class NepacProcess(object):
             #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
             # [time2, date2, lat2, long2, Chl-a2,
             #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
-            # -------------------------------------------------------------------------
+            # ----------------------------------------------------------------
 
             ex = self._processTimeDate(timeDate,
                                        timeDateToLocChl[timeDate],
@@ -180,7 +178,7 @@ class NepacProcess(object):
             csvwriter.writerow(fields)
             csvwriter.writerows(rowsToWrite)
 
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     # _readInputFile
     #
     # The input file looks like, ...
@@ -199,8 +197,7 @@ class NepacProcess(object):
     #     (time1, date1): [(lat1, lon1, obs1), (lat2, lon1, obs3)],
     #     (time2, date2): [(lat2, lon2, obs2)]
     # }
-    # -------------------------------------------------------------------------
-
+    # ------------------------------------------------------------------------
     def _readInputFile(self):
 
         timeDateToLocChl = {}
@@ -232,7 +229,7 @@ class NepacProcess(object):
 
         return timeDateToLocChl
 
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     # processTimeDate
     #
     # For each row in the observations, or each time/date in the aggregate,
@@ -257,7 +254,7 @@ class NepacProcess(object):
     #           (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
     #       }
     # }
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     @staticmethod
     def _processTimeDate(timeDate, locsChls, missions, outputDir):
 
@@ -281,11 +278,11 @@ class NepacProcess(object):
 
         return sortedValuesPerMissionDict
 
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     # processMission
     #
     # This can be distributed.
-    # -------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     @staticmethod
     def _processMission(mission, timeDate, locsChls, missions, outputDir):
 

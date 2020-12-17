@@ -5,6 +5,7 @@ import sys
 from core.model.CeleryConfiguration import *
 from core.model.SystemCommand import SystemCommand
 
+
 # -----------------------------------------------------------------------------
 # class ILProcessController
 #
@@ -40,10 +41,7 @@ from core.model.SystemCommand import SystemCommand
 # Note that the Redis server acts as the backend that maintains state for
 # Celery transactions.  This could have been implemented with brokers like
 # RabbitMQ or Amazon SQS; however, Redis presented installation simplicity.
-
 # -----------------------------------------------------------------------------
-
-
 class ILProcessController():
 
     backendProcessId = 0
@@ -109,7 +107,6 @@ class ILProcessController():
     #
     # Shutdown Redis server and Celery workers
     # -------------------------------------------------------------------------
-
     def __exit__(self, type, value, traceback):
 
         try:
@@ -120,11 +117,6 @@ class ILProcessController():
             shutdownWorkers = "/usr/bin/pkill -9 -f  " + \
                               ILProcessController.celeryConfig
             SystemCommand(shutdownWorkers, None, True)
-
-            # Shutdown the Celery Server
-            # shutdownServer = str("/bin/kill -9 " +
-            #                     str(ILProcessController.backendProcessId))
-            # SystemCommand(shutdownServer, None, True)
 
             return True
 

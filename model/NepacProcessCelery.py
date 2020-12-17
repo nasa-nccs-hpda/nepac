@@ -1,4 +1,3 @@
-
 import csv
 import os
 
@@ -7,16 +6,14 @@ from celery import group, chord
 from core.model.CeleryConfiguration import app
 from nepac.model.NepacProcess import NepacProcess
 
+
 # -----------------------------------------------------------------------------
 # class NepacProcessCelery
 # -----------------------------------------------------------------------------
-
-
 class NepacProcessCelery(NepacProcess):
 
     # -------------------------------------------------------------------------
     # __init__
-    #
     # -------------------------------------------------------------------------
     def __init__(self, nepacInputFile, missionDataSetDict, outputDir):
 
@@ -65,7 +62,8 @@ class NepacProcessCelery(NepacProcess):
                 timeDate=timeDate,
                 locsChls=timeDateToLocChl[timeDate],
                 missions=self._missions,
-                outputDir=self._outputDir)) for timeDate in timeDateToLocChl])
+                outputDir=self._outputDir)) for timeDate in timeDateToLocChl
+        ])
 
         chordPerTimeDateResult = chordPerTimeDate.apply_async()
         chordPerTimeDateResultProcessed = chordPerTimeDateResult.get()
@@ -124,9 +122,7 @@ class NepacProcessCelery(NepacProcess):
 
     # -------------------------------------------------------------------------
     # processTimeDate
-    #
     # -------------------------------------------------------------------------
-
     @staticmethod
     @app.task()
     def _processTimeDate(missionDictList,

@@ -5,14 +5,13 @@ from nepac.model.ILProcessController import ILProcessController
 from nepac.model.NepacProcessCelery import NepacProcessCelery
 from nepac.model.NepacProcess import NepacProcess
 
+
 # -----------------------------------------------------------------------------
 # main
 #
 # python nepac/view/NepacCommandLineView.py --celery -f \
 # nepac/model/tests/nepacInputTwo.csv -m 'MODIS-Terra:Rrs_443 MODIS-Aqua:ipar'
 # -----------------------------------------------------------------------------
-
-
 def main():
 
     desc = 'This application runs NepacProcess'

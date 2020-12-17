@@ -1,8 +1,8 @@
-
 import os
 import unittest
 
 from nepac.model.NepacProcess import NepacProcess
+
 
 # -----------------------------------------------------------------------------
 # class NepacProcessTestCase
@@ -14,8 +14,6 @@ from nepac.model.NepacProcess import NepacProcess
 # python -m unittest discover model/tests/
 # python -m unittest nepac.model.tests.test_NepacProcess
 # -----------------------------------------------------------------------------
-
-
 class NepacProcessTestCase(unittest.TestCase):
 
     IN_FILE1 = os.path.join(os.path.dirname(os.path.abspath(__file__)),
