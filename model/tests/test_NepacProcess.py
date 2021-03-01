@@ -22,8 +22,14 @@ class NepacProcessTestCase(unittest.TestCase):
     IN_FILE2 = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             'nepacInputTwo.csv')
 
-    MISSION_DICT = {'MODIS-Aqua': ['Rrs_443', 'Rrs_412', 'ipar'],
-                    'MODIS-Terra': ['Rrs_443', 'ipar']}
+    MISSION_DICT1 = {'MODIS-Aqua': ['Rrs_443', 'Rrs_412'],
+                     'MODIS-Terra': ['Rrs_443'],
+                     'VIIRS-JPSS1': ['Rrs_445'],
+                     'VIIRS-SNPP': ['Rrs_443']}
+    MISSION_DICT2 = {'GOCI': ['Rrs_443', 'Rrs_412'],
+                     'MODIS-Terra': ['Rrs_443'],
+                     'VIIRS-JPSS1': ['Rrs_445'],
+                     'VIIRS-SNPP': ['Rrs_443']}
 
     BAD_MISSION_DICT = {'MODIS-Aqua': ['Rrs_440']}
 
@@ -46,7 +52,7 @@ class NepacProcessTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'An output directory'):
 
             NepacProcess(NepacProcessTestCase.IN_FILE1,
-                         NepacProcessTestCase.MISSION_DICT,
+                         NepacProcessTestCase.MISSION_DICT1,
                          None)
 
         with self.assertRaisesRegex(ValueError, 'Invalid data set'):
@@ -57,7 +63,10 @@ class NepacProcessTestCase(unittest.TestCase):
 
         # Valid everything.
         NepacProcess(NepacProcessTestCase.IN_FILE1,
-                     NepacProcessTestCase.MISSION_DICT,
+                     NepacProcessTestCase.MISSION_DICT1,
+                     '.')
+        NepacProcess(NepacProcessTestCase.IN_FILE2,
+                     NepacProcessTestCase.MISSION_DICT2,
                      '.')
 
     # -------------------------------------------------------------------------
@@ -67,11 +76,11 @@ class NepacProcessTestCase(unittest.TestCase):
 
         # Valid everything
         np1 = NepacProcess(NepacProcessTestCase.IN_FILE1,
-                           NepacProcessTestCase.MISSION_DICT,
+                           NepacProcessTestCase.MISSION_DICT1,
                            '.')
         np1.run()
 
         np2 = NepacProcess(NepacProcessTestCase.IN_FILE2,
-                           NepacProcessTestCase.MISSION_DICT,
+                           NepacProcessTestCase.MISSION_DICT2,
                            '.')
         np2.run()

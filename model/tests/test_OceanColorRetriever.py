@@ -1,7 +1,6 @@
 import datetime
-import shutil
-import time
 import unittest
+import tempfile
 
 from nepac.model.OceanColorRetriever import OceanColorRetriever
 
@@ -25,17 +24,18 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         validDateTime = datetime.datetime(2004, 1, 1)
         invalidDateTime = datetime.datetime(2000, 1, 1)
+        validLocation = ('-76.51005', '39.07851')
 
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            OceanColorRetriever('invalidMission', validDateTime)
+            OceanColorRetriever('invalidMission', validDateTime, validLocation)
 
         with self.assertRaisesRegex(RuntimeError, 'Invalid date:'):
-            OceanColorRetriever('MODIS-Aqua', invalidDateTime)
+            OceanColorRetriever('MODIS-Aqua', invalidDateTime, validLocation)
 
         # Test valid everything.
-        OceanColorRetriever('MODIS-Aqua', validDateTime)
+        OceanColorRetriever('MODIS-Aqua', validDateTime, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -51,42 +51,95 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
             'ipar'))
 
     # -------------------------------------------------------------------------
+    # testIsValidLocation
+    # -------------------------------------------------------------------------
+    def testIsValidLocation(self):
+
+        validDateTime = datetime.datetime(year=2018,
+                                          month=12,
+                                          day=11,
+                                          hour=13)
+        invalidLonLocation = ('-200', '20')
+        invalidLatLocation = ('-180', '180')
+        validLocation = ('-76.51005', '39.07851')
+
+        with self.assertRaisesRegex(RuntimeError, 'Invalid l'):
+            OceanColorRetriever('VIIRS-SNPP',
+                                validDateTime,
+                                invalidLonLocation)
+
+        with self.assertRaisesRegex(RuntimeError, 'Invalid l'):
+            OceanColorRetriever('VIIRS-JPSS1',
+                                validDateTime,
+                                invalidLatLocation)
+
+        OceanColorRetriever('VIIRS-SNPP', validDateTime, validLocation)
+    # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
+
     def testRun(self):
 
-        tmp_directory = 'tmpTestOutputDirectory' + str(time.time())
+        tmp_directory = tempfile.gettempdir()
 
-        # Test invalid date time, which results in a 400 level error.
-        with self.assertRaisesRegex(RuntimeError, 'Client or server error:'):
-            ocr_0 = OceanColorRetriever('MODIS-Aqua',
-                                        datetime.datetime(2004, 1, 1, 0, 5),
-                                        tmp_directory)
-            ocr_0.run()
+        # --------------------------------------------------------------------
+        # Test invalid date time.
+        # --------------------------------------------------------------------
+        invalidDt = datetime.datetime.today()
+        invalidLoc = ('-77.1739', '38.6082')
+
+        with self.assertRaisesRegex(RuntimeError, 'Could not find'):
+            invalidModisaOCR = OceanColorRetriever(
+                'MODIS-Aqua',
+                invalidDt,
+                invalidLoc,
+                outputDirectory=tmp_directory)
+            invalidModisaOCR.run()
 
         # --------------------------------------------------------------------
         # Test valid date time.
         # We test multiple missions due to differing date ranges.
         # --------------------------------------------------------------------
-        ocr_1 = OceanColorRetriever('MODIS-Aqua',
-                                    datetime.datetime(2004, 1, 1, 2, 10),
-                                    tmp_directory)
-        ocr_1.run()
+        validModisDt = datetime.datetime(year=2018,
+                                         month=10,
+                                         day=31,
+                                         hour=18,
+                                         minute=45)
+        validModisLoc = ('13.30553', '36.42652')
 
-        ocr_2 = OceanColorRetriever('MODIS-Terra',
-                                    datetime.datetime(2001, 1, 1, 0, 0),
-                                    tmp_directory)
-        ocr_2.run()
+        modisaOCR = OceanColorRetriever('MODIS-Aqua',
+                                        validModisDt,
+                                        validModisLoc,
+                                        outputDirectory=tmp_directory)
+        modisaOCR.run()
 
-        ocr_3 = OceanColorRetriever('CZCS',
-                                    datetime.datetime(
-                                        1978, 10, 30, 12, 48, 34),
-                                    tmp_directory)
-        ocr_3.run()
+        modistOCR = OceanColorRetriever('MODIS-Terra',
+                                        validModisDt,
+                                        validModisLoc,
+                                        outputDirectory=tmp_directory)
+        modistOCR.run()
 
-        ocr_4 = OceanColorRetriever('GOCI',
-                                    datetime.datetime(2011, 4, 1, 00, 16, 41),
-                                    tmp_directory)
-        ocr_4.run()
+        validCzcsDt = datetime.datetime(year=1985,
+                                        month=10,
+                                        day=7,
+                                        hour=15,
+                                        minute=50)
+        validCzcsLoc = ('-77.1739', '38.6082')
+        czcsOCR = OceanColorRetriever('CZCS',
+                                      validCzcsDt,
+                                      validCzcsLoc,
+                                      outputDirectory=tmp_directory)
+        czcsOCR.run()
 
-        shutil.rmtree(tmp_directory, ignore_errors=True)
+        gociDt = datetime.datetime(year=2011,
+                                   month=4,
+                                   day=1,
+                                   hour=00,
+                                   minute=16)
+        validLocGOCI = ('131.2670', '39.5092')
+
+        gociOCR = OceanColorRetriever('GOCI',
+                                      gociDt,
+                                      validLocGOCI,
+                                      outputDirectory=tmp_directory)
+        gociOCR.run()

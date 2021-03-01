@@ -2,15 +2,12 @@ import csv
 import datetime
 import errno
 import os
-import tempfile
-import struct
 
-from osgeo.osr import SpatialReference
-from osgeo.gdal import GDT_Float32
-from osgeo.gdal import Translate
+import numpy as np
+from numpy.core.numeric import NaN
+import xarray as xr
 
 from core.model.BaseFile import BaseFile
-from core.model.GeospatialImageFile import GeospatialImageFile
 from nepac.model.OceanColorRetriever import OceanColorRetriever
 
 
@@ -37,7 +34,40 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # time, date, [(lat, lon), (lat, lon), ...]
 # ...
 # -----------------------------------------------------------------------------
-class NepacProcess(object):
+class NepacProcess(object):\
+
+    # Takes name of input csv and appends this for output file.
+    RESULT_APPEND_STRING = '_output'
+
+    # Date format to pull dates from CSV
+    DATE_FORMAT = '%m/%d/%YT%H:%M:%S'
+
+    # NetCDF Subdataset group which houses all nav data.
+    NAVIGATION_GROUP = 'navigation_data'
+
+    # NetCDF Subdataset group which houses all geophysical data.
+    GEOPHYSICAL_GROUP = 'geophysical_data'
+
+    # Amount of location difference we allow when extracting data.
+    DEGREE_PATIENCE = 0.2
+
+    # Current flag to mask out of our data extraction process.
+    CURRENT_FLAG = 'land'
+
+    # Options to mask out of our data extraction process.
+    L2_FLAGS_MASKS = {
+        'default_prodfail': 1073742610,
+        'prodfail': 1073741824,
+        'default': 786,
+        'default-land': 784,
+        'land': 2}
+
+    # How the output CSV fields look.
+    CSV_HEADERS = ['Time (UTC)',
+                   'Date',
+                   'Latitude',
+                   'Longitude',
+                   'CHLA (ug/L)']
 
     # -------------------------------------------------------------------------
     # __init__
@@ -98,13 +128,11 @@ class NepacProcess(object):
     def run(self):
 
         # Read the input file and aggregate by mission.
-        timeDateToLocChl = self._readInputFile()
-
+        timeDateLocToChl = self._readInputFile()
         # Get the pixel values for each mission.
         rowsToWrite = []
-
-        for timeDate in timeDateToLocChl:
-
+        for i, timeDateLoc in enumerate(timeDateLocToChl):
+            print('Processing row: {}/{}'.format(i+1, len(timeDateLocToChl)))
             # ----------------------------------------------------------------
             # The data returned from self._processTimeDate takes the form of:
             # { missionName1 :
@@ -125,35 +153,36 @@ class NepacProcess(object):
             # [time2, date2, lat2, long2, Chl-a2,
             #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
             # ----------------------------------------------------------------
+            ex = self._processTimeDateLoc(timeDateLoc,
+                                          timeDateLocToChl[timeDateLoc],
+                                          self._missions,
+                                          self._outputDir)
+            rowsPerTimeDateLoc = []
 
-            ex = self._processTimeDate(timeDate,
-                                       timeDateToLocChl[timeDate],
-                                       self._missions,
-                                       self._outputDir)
-            rowsPerTimeDate = []
-
-            for i, (missionKey, missionVals) in enumerate(ex.items()):
+            for j, (missionKey, missionVals) in enumerate(ex.items()):
                 for k, (rowKey, rowValues) in enumerate(missionVals.items()):
 
                     # First time seeing these keys, new row.
-                    if i == 0:
+                    if j == 0:
                         newRow = []
                         rowKeyTuple = tuple(rowKey.split(","))
                         newRow.extend(list(rowKeyTuple))
                         newRow.extend(rowValues)
-                        rowsPerTimeDate.append(newRow)
+                        rowsPerTimeDateLoc.append(newRow)
 
                     # Keys are already present, append data.
                     else:
-                        rowsPerTimeDate[k].extend(rowValues)
+                        rowsPerTimeDateLoc[k].extend(rowValues)
 
             # Write this timeDate's data rows to the overall rows.
-            rowsToWrite.extend(rowsPerTimeDate)
+            rowsToWrite.extend(rowsPerTimeDateLoc)
 
         # Write the output file.
         outFileName = os.path.splitext(
             os.path.basename(self._inputFile.fileName()))
-        outFileName = outFileName[0] + '_output' + outFileName[1]
+        outFileName = outFileName[0] + \
+            self.RESULT_APPEND_STRING + \
+            outFileName[1]
 
         outputFile = os.path.join(self._outputDir,
                                   outFileName)
@@ -164,11 +193,7 @@ class NepacProcess(object):
             csvwriter = csv.writer(csvfile)
 
             # Start with base fields
-            fields = ['Time[hhmm]',
-                      'Date[mmddyyyy]',
-                      'Lat.[-90—90 deg.]',
-                      'Long.[0-360.E]',
-                      'Chl-a']
+            fields = self.CSV_HEADERS
 
             # Sort keys in missions to match incoming data, add to fields.
             for mission in sorted(self._missions.keys()):
@@ -187,20 +212,20 @@ class NepacProcess(object):
     # time2, date2, lat2, lon2, obs2
     # time1, date1, lat2, lon1, obs3
     #
-    # ... and the DAAC's file names are based on date and time, so aggregate
-    # the observations by date and time.  That allows us to get pixel values
-    # for every observation location in the same image file with a single
-    # read.
+    # ... due to having to search spatially in addition to temporally, we
+    # cannot aggregate by one combination of keys, each row that is unique
+    # must be a unique entry in the dictionary.
     #
     # The result of reading the input file is an aggregated dictionary.
     # {
-    #     (time1, date1): [(lat1, lon1, obs1), (lat2, lon1, obs3)],
-    #     (time2, date2): [(lat2, lon2, obs2)]
+    #     (time1, date1, lat1, lon1): [obs1],
+    #     (time2, date2, lat2, lon2): [obs2],
+    #     (time3, date3, lat3, lon3): [obs3]
     # }
     # ------------------------------------------------------------------------
     def _readInputFile(self):
 
-        timeDateToLocChl = {}
+        timeDateLocToChl = {}
 
         with open(self._inputFile.fileName()) as csvFile:
 
@@ -210,24 +235,22 @@ class NepacProcess(object):
             for row in reader:
 
                 # ---
-                # Aggregate the rows by time and date.  Time and date
-                # determine a mission file name.  There could be multiple
-                # observations for a single time and date combination.  Get
-                # the imagery once, and extract all the values at the
-                # observation points.
+                # Aggregate the rows by time, date, and location. This
+                # combination determines a mission file name through a CMR
+                # search.
                 # ---
-                timeDateKey = (row['Time[hhmm]'].strip(),
-                               row['Date[mmddyyyy]'].strip())
+                timeDateLocKey = (row['Time (UTC)'].strip(),
+                                  row['Date'].strip(),
+                                  row['Latitude'].strip(),
+                                  row['Longitude'].strip())
 
-                if timeDateKey not in timeDateToLocChl:
-                    timeDateToLocChl[timeDateKey] = []
+                if timeDateLocKey not in timeDateLocToChl:
+                    timeDateLocToChl[timeDateLocKey] = []
 
-                timeDateToLocChl[timeDateKey]. \
-                    append((row['Lat.[-90—90 deg.]'].strip(),
-                            row['Long.[0-360.E]'].strip(),
-                            row['Chl-a'].strip()))
+                timeDateLocToChl[timeDateLocKey]. \
+                    append((row['CHLA (ug/L)'].strip()))
 
-        return timeDateToLocChl
+        return timeDateLocToChl
 
     # ------------------------------------------------------------------------
     # processTimeDate
@@ -246,19 +269,19 @@ class NepacProcess(object):
     #
     # { missionName1 :
     #      {
-    #          (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
-    #          (time2, data2, lat2, long2, Chl-A2) : [pVal1, pVal2]
+    #          (time1, data1, lat1, lon1, Chl-A1) : [pVal1, pVal2],
+    #          (time2, data2, lat2, lon2, Chl-A2) : [pVal1, pVal2]
     #       }
     #   missionName2 :
     #       {
-    #           (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
+    #           (time1, data1, lat1, lon1, Chl-A1) : [pVal1, pVal2],
     #       }
     # }
     # ------------------------------------------------------------------------
     @staticmethod
-    def _processTimeDate(timeDate, locsChls, missions, outputDir):
+    def _processTimeDateLoc(timeDateLoc, Chls, missions, outputDir):
 
-        print('Processing', timeDate)
+        print('Processing', timeDateLoc)
 
         valuesPerMissionDict = {}
 
@@ -266,8 +289,8 @@ class NepacProcess(object):
 
             dictOutput = \
                 NepacProcess._processMission(mission,
-                                             timeDate,
-                                             locsChls,
+                                             timeDateLoc,
+                                             Chls,
                                              missions,
                                              outputDir)
             valuesPerMissionDict.update(dictOutput)
@@ -284,93 +307,182 @@ class NepacProcess(object):
     # This can be distributed.
     # ------------------------------------------------------------------------
     @staticmethod
-    def _processMission(mission, timeDate, locsChls, missions, outputDir):
+    def _processMission(mission, timeDateLoc, chls, missions, outputDir):
+        print('MISSION: {}, TDL: {}'.format(
+            mission, timeDateLoc))
+        timeDateSplit = str(timeDateLoc[1]) + 'T' + str(timeDateLoc[0])
+        dt = datetime.datetime.strptime(timeDateSplit,
+                                        NepacProcess.DATE_FORMAT)
+        trueLatLon = (float(timeDateLoc[2]),
+                      float(timeDateLoc[3]))
 
-        print('Processing mission', mission)
-        print('timeDate: ', timeDate)
-        print('locs and chl: ', locsChls)
-        # Get the image file.
-        hour = int(timeDate[0][:2])
-        minute = int(timeDate[0][2:])
-        month = int(timeDate[1][:2])
-        day = int(timeDate[1][2:4])
-        year = int(timeDate[1][4:])
-        dt = datetime.datetime(year, month, day, hour, minute)
+        missionFile = NepacProcess.searchDownloadOceanColorRetriever(
+            mission,
+            dt,
+            timeDateLoc
+        )
 
-        ocr = OceanColorRetriever(mission, dt, outputDir)
-        missionFile = ocr.run()
-
-        # Instantiate a GeospatialImageFile to access its data sets.
-        srs = SpatialReference()
-        srs.ImportFromEPSG(4326)
-        image = GeospatialImageFile(missionFile, srs)
-        subs = image._getDataset().GetSubDatasets()
-
-        # ---
-        # Extract the data sets and get the pixel values.  This should
-        # probably not be distributed.  There would be multiple processes
-        # trying to open the same image.
-        # ---
+        dataArrayMerged = NepacProcess.extractDataset(missionFile)
         dataSets = missions[mission]
         nepacOutputDict = {}
 
-        for sub in sorted(subs):
+        x_idx, y_idx = NepacProcess.getLatLonIndex(dataArrayMerged,
+                                                   trueLatLon[0],
+                                                   trueLatLon[1]
+                                                   )
+        foundLatLon = (float(dataArrayMerged.latitude[x_idx][y_idx]),
+                       float(dataArrayMerged.longitude[x_idx][y_idx])
+                       )
 
-            datasetName = sub[0]
-            var = datasetName.split(':')[2]
-            cleanedVar = datasetName.split('_data/')[1]
+        print('Given location: Lat={} Lon={}'.format(
+            trueLatLon[0], trueLatLon[1]))
+        print('Closes location: Lat={} Lon={}'.format(
+            foundLatLon[0],
+            foundLatLon[1]
+        ))
 
-            print('Seeking', var, 'in', dataSets)
+        latlonFoundOutOfBounds = NepacProcess.checkLatLonOutOfWindow(
+            trueLatLon,
+            foundLatLon)
 
-            if cleanedVar in dataSets:
+        for sub in sorted(dataArrayMerged.variables):
 
-                print('Found', var, 'in', dataSets)
+            datasetName = sub
 
-                name = tempfile.mkstemp()[1]
+            if datasetName in dataSets:
 
-                Translate(name, datasetName)
-                dsImage = GeospatialImageFile(name, srs)
+                val = dataArrayMerged[datasetName].sel(number_of_lines=x_idx,
+                                                       pixels_per_line=y_idx)
 
-                for locChl in locsChls:
+                # Return NAN if closest location not within our window.
+                val = float(val) if not latlonFoundOutOfBounds else NaN
 
-                    imagePt = dsImage.groundToImage(float(locChl[0]),
-                                                    float(locChl[1]))
+                timeDateLocChlKey = (
+                    timeDateLoc[0],
+                    timeDateLoc[1],
+                    timeDateLoc[2],
+                    timeDateLoc[3],
+                    chls[0])
 
-                    val = dsImage._getDataset().\
-                        ReadRaster(imagePt[0],
-                                   imagePt[1],
-                                   xsize=1,
-                                   ysize=1,
-                                   buf_type=GDT_Float32)
+                timeDateLocChlKey = ','.join(timeDateLocChlKey)
 
-                    # Byte form to float
-                    [val] = struct.unpack('f', val)
+                # New key to be made, appends vals
+                if timeDateLocChlKey not in nepacOutputDict:
 
-                    timeDateLocChlKey = (
-                        timeDate[0],
-                        timeDate[1],
-                        locChl[0],
-                        locChl[1],
-                        locChl[2])
-                    timeDateLocChlKey = ','.join(timeDateLocChlKey)
+                    nepacOutputDict[timeDateLocChlKey] = []
+                    nepacOutputDict[timeDateLocChlKey].append(val)
 
-                    # New key to be made, appends vals
-                    if timeDateLocChlKey not in nepacOutputDict:
+                # Key has already been added, append vals
+                else:
 
-                        nepacOutputDict[timeDateLocChlKey] = []
-                        nepacOutputDict[timeDateLocChlKey].append(val)
-
-                    # Key has already been added, append vals
-                    else:
-                        nepacOutputDict[timeDateLocChlKey].append(val)
-
-                dsImage = None
-                os.remove(name)
+                    nepacOutputDict[timeDateLocChlKey].append(val)
 
         if os.path.exists(missionFile):
+
             os.remove(missionFile)
 
         nepacMissionOutput = {}
         nepacMissionOutput[mission] = nepacOutputDict
 
         return nepacMissionOutput
+
+    # ------------------------------------------------------------------------
+    # searchDownloadOceanColorRetriever()
+    #
+    # Intantiate and run an OceanColorRetriever object which will query
+    # and download the appropriate OB DAAC NetCDF file.
+    #
+    # If the file was not properly downloaded but no error was raised in
+    # running OCR, we can conclude that a concurrency problem occured
+    # from CELERY with an improper download. Try it again. The assumption is
+    # that the error case would likely never be encountered during a
+    # linear run, only a parallel run should we find something like this.
+    # ------------------------------------------------------------------------
+    @staticmethod
+    def searchDownloadOceanColorRetriever(mission, dt, timeDateLoc):
+        ocr = OceanColorRetriever(mission=mission,
+                                  dateTime=dt,
+                                  lonLat=(timeDateLoc[3], timeDateLoc[2]),
+                                  dayNightFlag='')
+        missionFile, _ = ocr.run()
+        if not os.path.exists(missionFile):
+            print('{} was not properly downloaded.\n Retrying'.format(
+                missionFile))
+            ocr = OceanColorRetriever(mission=mission,
+                                      dateTime=dt,
+                                      lonLat=(timeDateLoc[3], timeDateLoc[2]),
+                                      dayNightFlag='')
+            missionFile, _ = ocr.run()
+            if not os.path.exists(missionFile):
+                msg = '{} not succesfully downloaded'.format(missionFile)
+                raise RuntimeError(msg)
+        return missionFile
+
+    # ------------------------------------------------------------------------
+    # extractDataset()
+    #
+    # Extract the given mission file to an xarray ndarray. Merge necessary
+    # sub-datasets (LAT/LON/L2_FLAGS/Bands)
+    # ------------------------------------------------------------------------
+
+    @staticmethod
+    def extractDataset(missionFile):
+        dataArrayGeo = xr.open_dataset(missionFile,
+                                       group=NepacProcess.GEOPHYSICAL_GROUP)
+        dataArrayNav = xr.open_dataset(missionFile,
+                                       group=NepacProcess.NAVIGATION_GROUP)
+        dataArrayMerged = xr.merge(
+            [dataArrayNav.latitude,
+             dataArrayNav.longitude,
+             dataArrayGeo])
+
+        # ---
+        # FOR REVIEW: This is my C brain coming out. Is this necessary
+        # and/or desired to trigger garbage collection?
+        # ---
+        dataArrayGeo = None
+        dataArrayNav = None
+        return dataArrayMerged
+
+    # ------------------------------------------------------------------------
+    # getLatLonIndex()
+    #
+    # Given an xarray ndarray (dataset), and a given location, find the
+    # closest valid location.
+    # Valid is defined as what we're not looking for (no cloud/ice, no land).
+    # ------------------------------------------------------------------------
+    @staticmethod
+    def getLatLonIndex(xrDset, lat, lon):
+        nanarray = np.empty(xrDset.l2_flags.shape)
+        nanarray.fill(np.nan)
+        condition = (
+            (xrDset.l2_flags &
+             NepacProcess.L2_FLAGS_MASKS[NepacProcess.CURRENT_FLAG])
+            > 0)
+        condLats = np.where(condition,
+                            nanarray, xrDset.latitude)
+        condLons = np.where(condition,
+                            nanarray, xrDset.longitude)
+        diffSquared = (condLats - lat)**2 + (condLons - lon)**2
+        argm = np.nanargmin(diffSquared)
+        x_loc, y_loc = np.unravel_index(argm, diffSquared.shape)
+        return x_loc, y_loc
+
+    # ------------------------------------------------------------------------
+    # checkLatLonOutOfWindow()
+    #
+    # Given a ground truth location (trueLatLon) and a location found via
+    # getLatLonIndex(), determine if any valid solutions were found.
+    #
+    # Validity is determined by a window (NepacProcess.DEGREE_PATRIENCE).
+    # ------------------------------------------------------------------------
+    @staticmethod
+    def checkLatLonOutOfWindow(trueLatLon, foundLatLon):
+        latlonFoundOutOfBounds = False
+        for i, latLon in enumerate(trueLatLon):
+            abs_diff = abs(latLon - foundLatLon[i])
+            if abs_diff > NepacProcess.DEGREE_PATIENCE:
+                latlonFoundOutOfBounds = True
+                print('No valid location found (out of bounds)')
+                print('Distance difference: {}'.format(abs_diff))
+        return latlonFoundOutOfBounds

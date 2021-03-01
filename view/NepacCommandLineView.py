@@ -1,5 +1,6 @@
 import argparse
 import sys
+import os
 
 from nepac.model.ILProcessController import ILProcessController
 from nepac.model.NepacProcessCelery import NepacProcessCelery
@@ -16,6 +17,7 @@ def main():
 
     desc = 'This application runs NepacProcess'
     parser = argparse.ArgumentParser(description=desc)
+
     parser.add_argument('--celery',
                         action='store_true',
                         help='The option to use celery to distribute' +
@@ -30,8 +32,18 @@ def main():
                         default='.',
                         help='Output directory path.')
 
+    parser.add_argument('-md_file',
+                        required=False,
+                        type=str,
+                        help='Use this if the user would like to give' +
+                        ' NEPAC a file with Mission:Dataset on each line.\n' +
+                        'Examples of a file would look like: \n' +
+                        'MODIS-Terra:Rrs_443 MODIS-Aqua:ipar' +
+                        '\n where each Mission:Dataset combo is' +
+                        ' a new line.')
+
     parser.add_argument('-m',
-                        required=True,
+                        required='-md_file' not in sys.argv,
                         type=str,
                         help='Mission:Dataset list to sample pixel values' +
                         'from.\n' +
@@ -40,8 +52,19 @@ def main():
 
     args = parser.parse_args()
 
+    if args.m:
+        missionDatasets = args.m.split()  # Using CMD line args as input.
+    else:
+        if os.path.exists(args.md_file):  # Using file as input.
+            with open(args.md_file, 'r') as srcFile:
+                missionDatasets = []
+                for line in srcFile:
+                    lineStripper = line.strip()
+                    missionDatasets.append(lineStripper)
+
     # -------------------------------------------------------------------------
-    # Take the Mission:Dataset string from cmd line arguments in the form of:
+    # Take the Mission:Dataset string from cmd line arguments
+    # or file input in the form of:
     # 'Mission1:Subdataset1 Mission1:Subdataset2 Mission2:Subdataset2'
     # and make a dictionary where keys are the Missions and the values per
     # key are Subdatasets:
@@ -51,8 +74,7 @@ def main():
     # }
     # -------------------------------------------------------------------------
     missionDataSetDict = {}
-
-    for missionDataset in args.m.split():
+    for missionDataset in missionDatasets:
 
         mission, dataset = missionDataset.split(':')
 
@@ -62,15 +84,11 @@ def main():
         missionDataSetDict[mission].append(dataset)
 
     if args.celery:
-
-        # Spawn Redis and Celery
         with ILProcessController() as processController:
-
             np = NepacProcessCelery(args.f,
                                     missionDataSetDict,
                                     args.o)
             np.run()
-
     else:
         np = NepacProcess(args.f,
                           missionDataSetDict,
