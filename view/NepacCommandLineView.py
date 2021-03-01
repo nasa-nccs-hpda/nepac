@@ -61,6 +61,9 @@ def main():
                 for line in srcFile:
                     lineStripper = line.strip()
                     missionDatasets.append(lineStripper)
+        else:
+            msg = '{} not found'.format(args.md_file)
+            raise RuntimeError(msg)
 
     # -------------------------------------------------------------------------
     # Take the Mission:Dataset string from cmd line arguments
