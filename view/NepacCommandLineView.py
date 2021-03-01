@@ -52,12 +52,12 @@ def main():
 
     args = parser.parse_args()
 
+    missionDatasets = []
     if args.m:
         missionDatasets = args.m.split()  # Using CMD line args as input.
     else:
         if os.path.exists(args.md_file):  # Using file as input.
             with open(args.md_file, 'r') as srcFile:
-                missionDatasets = []
                 for line in srcFile:
                     lineStripper = line.strip()
                     missionDatasets.append(lineStripper)
