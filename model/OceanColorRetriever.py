@@ -30,7 +30,7 @@ class OceanColorRetriever(object):
                        'Rrs_412', 'Rrs_443', 'Rrs_469', 'Rrs_488', 'Rrs_531',
                        'Rrs_547', 'Rrs_555', 'Rrs_645', 'Rrs_667', 'Rrs_678'],
 
-        'CZCS': ['chlor_a', 'Kd_490', 'Rrs_520', 'Rrs_543', 'Rrs_550',
+        'CZCS': ['chlor_a', 'Kd_490', 'Rrs_443', 'Rrs_520', 'Rrs_550',
                  'Rrs_670'],
 
         'GOCI': ['chlor_a', 'Kd_490', 'poc', 'Rrs_412', 'Rrs_443', 'Rrs_490',
