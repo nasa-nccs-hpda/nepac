@@ -9,7 +9,7 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # class OceanColorRetrieverTestCase
 #
 # singularity shell -B /att
-# /att/nobackup/iluser/containers/ilab-core-5.0.0.simg
+# /att/nobackup/iluser/containers/ilab-nepac-2.0.0.simg
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -74,17 +74,15 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
                                 invalidLatLocation)
 
         OceanColorRetriever('VIIRS-SNPP', validDateTime, validLocation)
+
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
-
     def testRun(self):
 
         tmp_directory = tempfile.gettempdir()
 
-        # --------------------------------------------------------------------
         # Test invalid date time.
-        # --------------------------------------------------------------------
         invalidDt = datetime.datetime.today()
         invalidLoc = ('-77.1739', '38.6082')
 
@@ -96,10 +94,10 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
                 outputDirectory=tmp_directory)
             invalidModisaOCR.run()
 
-        # --------------------------------------------------------------------
+        # ---
         # Test valid date time.
         # We test multiple missions due to differing date ranges.
-        # --------------------------------------------------------------------
+        # ---
         validModisDt = datetime.datetime(year=2018,
                                          month=10,
                                          day=31,

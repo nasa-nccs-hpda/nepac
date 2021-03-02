@@ -129,6 +129,7 @@ class NepacProcess(object):\
 
         # Read the input file and aggregate by mission.
         timeDateLocToChl = self._readInputFile()
+        
         # Get the pixel values for each mission.
         rowsToWrite = []
         for i, timeDateLoc in enumerate(timeDateLocToChl):

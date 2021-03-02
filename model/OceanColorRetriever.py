@@ -150,7 +150,7 @@ class OceanColorRetriever(object):
     # Given a set of parameters on init (time, location, mission), search for
     # and download the most relevant file. This uses CMR to search metadata for
     # relevant matches, it then uses the ODBAAC download script to pull the
-    # best match from the OC.DAAC.
+    # best match from the OB.DAAC.
     #
     # relevancePlace is used so in the future if we ever need to query a result
     # that is not the most relevant. (E.g. The most relevant file was too
@@ -160,8 +160,6 @@ class OceanColorRetriever(object):
         cmrRequestDict = self._searchCMR()
         cmrRequestDictToList = list(cmrRequestDict.values())
         mostRelevantResult = cmrRequestDictToList[relevancePlace]
-        # TO LOG
-        # END TO LOG
         fileURL = mostRelevantResult['file_url']
         fileURL = fileURL.split('.gov/cmr')[1]
         fileURL = '/ob'+fileURL
@@ -190,9 +188,9 @@ class OceanColorRetriever(object):
     # -------------------------------------------------------------------------
     # _searchCMR()
     #
-    # Search the Common Metadata Repository for a file that is a temporal and
-    # spatial match. If no results are found, we expand the temporal window
-    # to the entire temporal resolution of the image.
+    # Search the Common Metadata Repository(CMR) for a file that
+    # is a temporal and spatial match. If no results are found, we expand
+    # the temporal window to the entire temporal resolution of the image.
     # -------------------------------------------------------------------------
     def _searchCMR(self):
 
@@ -239,7 +237,7 @@ class OceanColorRetriever(object):
     # Take the date and time given and create a temporal window starting with
     # beginning of the day and end of the day.
     # If the wholeDayFlag is set to false and a time delta is given, the window
-    # is opened to the next closes path according to each mission.
+    # is opened to the next closest path according to each mission.
     # -------------------------------------------------------------------------
     def _makeTemporalWindow(self, wholeDayFlag=True, timeDelta=None):
 
@@ -283,7 +281,11 @@ class OceanColorRetriever(object):
     # -------------------------------------------------------------------------
     # _processRequestData()
     #
-    # REVIEW: Make the hard-coded names class constants? There are a lot...
+    # For each result in the CMR query, unpackage relevant information to
+    # a dictionary. While doing so set flags if data is not desirable (too
+    # close to edge of dataset).
+    #
+    #  REVIEW: Make the hard-coded names class constants? There are a lot...
     # -------------------------------------------------------------------------
     def _processRequestedData(self, resultDict):
         resultDictProcessed = dict()
@@ -325,8 +327,8 @@ class OceanColorRetriever(object):
             }
 
         # ---
-        # Sort results by whether result is within padding (2 degrees) first,
-        # then by time difference second.
+        # Sort results by whether result is within padding (class constant)
+        # first, then by time difference second.
         # ---
         sortedResultDic = {keyVal[0]: keyVal[1] for keyVal
                            in sorted(resultDictProcessed.items(),
