@@ -15,6 +15,9 @@ from nepac.model.libraries.obdaac_download import httpdl
 #
 # https://oceandata.sci.gsfc.nasa.gov
 # https://oceancolor.gsfc.nasa.gov/data/download_methods/#api
+#
+# https://cmr.earthdata.nasa.gov/search/
+# https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html
 # -----------------------------------------------------------------------------
 class OceanColorRetriever(object):
 
@@ -78,7 +81,7 @@ class OceanColorRetriever(object):
         'OCTS': pandas.date_range('1996-11-01', '1997-06-30'),
         'SeaWiFS': pandas.date_range('1997-09-04', '2010-12-11'),
         'MODIS-Terra': pandas.date_range('2000-02-24', datetime.date.today()),
-        'VIIRS-SNPP': pandas.date_range('2017-11-29', datetime.date.today()),
+        'VIIRS-SNPP': pandas.date_range('2012-01-02', datetime.date.today()),
         'VIIRS-JPSS1': pandas.date_range('2017-11-29', datetime.date.today())
     }
 
