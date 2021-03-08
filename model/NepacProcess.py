@@ -34,7 +34,7 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # time, date, [(lat, lon), (lat, lon), ...]
 # ...
 # -----------------------------------------------------------------------------
-class NepacProcess(object):\
+class NepacProcess(object):
 
     # Takes name of input csv and appends this for output file.
     RESULT_APPEND_STRING = '_output'
@@ -122,14 +122,15 @@ class NepacProcess(object):\
     # -------------------------------------------------------------------------
     # run
     #
-    # The data returned from self._processTimeData is on a per-mission basis.
-    # This is done for the idea that it doesn't matter whi
+    # This method calls sub-methods to (1) read input file into memory, (2)
+    # search, download, extract raster data from the desired files, (3)
+    # formats and writes data extracted to file.
     # -------------------------------------------------------------------------
     def run(self):
 
         # Read the input file and aggregate by mission.
         timeDateLocToChl = self._readInputFile()
-        
+
         # Get the pixel values for each mission.
         rowsToWrite = []
         for i, timeDateLoc in enumerate(timeDateLocToChl):
