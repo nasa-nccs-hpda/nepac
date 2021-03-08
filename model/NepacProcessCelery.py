@@ -39,40 +39,40 @@ class NepacProcessCelery(NepacProcess):
     # the data to a dictionary.
     #
     # The chords mentioned above are spawned asynchronously through a Celery
-    # group where a chord is made for each time-date present in the input
+    # group where a chord is made for each time-date-loc present in the input
     # file.
     # -------------------------------------------------------------------------
     def run(self):
 
         # Read the input file and aggregate by mission.
-        timeDateToLocChl = self._readInputFile()
+        timeDateLocToChl = self._readInputFile()
 
         # Get the pixel values for each mission.
         rowsToWrite = []
 
-        chordPerTimeDate = group([
+        chordPerTimeDateLoc = group([
             chord([NepacProcessCelery._processMission.s(
                 mission,
-                timeDate,
-                timeDateToLocChl[timeDate],
+                timeDateLoc,
+                timeDateLocToChl[timeDateLoc],
                 self._missions,
                 self._outputDir)
                 for mission in self._missions],
                 NepacProcessCelery._processTimeDate.s(
-                timeDate=timeDate,
-                locsChls=timeDateToLocChl[timeDate],
+                timeDate=timeDateLoc,
+                locsChls=timeDateLocToChl[timeDateLoc],
                 missions=self._missions,
-                outputDir=self._outputDir)) for timeDate in timeDateToLocChl
+                outputDir=self._outputDir)) for timeDateLoc in timeDateLocToChl
         ])
 
-        chordPerTimeDateResult = chordPerTimeDate.apply_async()
-        chordPerTimeDateResultProcessed = chordPerTimeDateResult.get()
+        chordPerTimeDateLocResult = chordPerTimeDateLoc.apply_async()
+        chordPerTimeDateLocResultProcessed = chordPerTimeDateLocResult.get()
 
-        for timeDateDict in chordPerTimeDateResultProcessed:
+        for timeDateLocDict in chordPerTimeDateLocResultProcessed:
 
             rowsPerTimeDate = []
 
-            for i, (missionKey, missionVals) in enumerate(timeDateDict.
+            for i, (missionKey, missionVals) in enumerate(timeDateLocDict.
                                                           items()):
                 for k, (rowKey, rowValues) in enumerate(missionVals.items()):
 
@@ -95,7 +95,9 @@ class NepacProcessCelery(NepacProcess):
         # Write the output file.
         outFileName = os.path.splitext(
             os.path.basename(self._inputFile.fileName()))
-        outFileName = outFileName[0] + '_output' + outFileName[1]
+        outFileName = outFileName[0] + \
+            self.RESULT_APPEND_STRING + \
+            outFileName[1]
 
         outputFile = os.path.join(self._outputDir,
                                   outFileName)
@@ -106,11 +108,7 @@ class NepacProcessCelery(NepacProcess):
             csvwriter = csv.writer(csvfile)
 
             # Start with base fields
-            fields = ['Time[hhmm]',
-                      'Date[mmddyyyy]',
-                      'Lat.[-90—90 deg.]',
-                      'Long.[0-360.E]',
-                      'Chl-a']
+            fields = self.CSV_HEADERS
 
             # Sort keys in missions to match incoming data, add to fields.
             for mission in sorted(self._missions.keys()):
@@ -149,13 +147,11 @@ class NepacProcessCelery(NepacProcess):
     # -------------------------------------------------------------------------
     @staticmethod
     @app.task()
-    def _processMission(mission, timeDate, locsChls, missions, outputDir):
-
-        print('In _processMission')
+    def _processMission(mission, timeDateLoc, chls, missions, outputDir):
 
         nepacOutput = NepacProcess._processMission(mission,
-                                                   timeDate,
-                                                   locsChls,
+                                                   timeDateLoc,
+                                                   chls,
                                                    missions,
                                                    outputDir)
         return nepacOutput
