@@ -22,14 +22,21 @@ class NepacProcessTestCase(unittest.TestCase):
     IN_FILE2 = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             'nepacInputTwo.csv')
 
-    MISSION_DICT1 = {'MODIS-Aqua': ['Rrs_443', 'Rrs_412'],
-                     'MODIS-Terra': ['Rrs_443'],
-                     'VIIRS-JPSS1': ['Rrs_445'],
-                     'VIIRS-SNPP': ['Rrs_443']}
+    MISSION_DICT1 = {'MODIS-Aqua': ['Rrs_412'],
+                     'MODIS-Terra': ['chlor_a', 'ipar', 'Kd_490',
+                                     'Rrs_412', 'Rrs_443',
+                                     'Rrs_547', 'Rrs_555'],
+                     'VIIRS-JPSS1': ['Rrs_556', 'Rrs_667'],
+                     'VIIRS-SNPP': ['Rrs_671']
+                     }
     MISSION_DICT2 = {'GOCI': ['Rrs_443', 'Rrs_412'],
                      'MODIS-Terra': ['Rrs_443'],
                      'VIIRS-JPSS1': ['Rrs_445'],
-                     'VIIRS-SNPP': ['Rrs_443']}
+                     'VIIRS-SNPP': ['Rrs_443'],
+                     'OC-CCI': ['Rrs_443'],
+                     'OI-SST': ['sst'],
+                     'ETOPO1-BED': ['z'],
+                     'BO-SSW': ['tau']}
 
     BAD_MISSION_DICT = {'MODIS-Aqua': ['Rrs_440']}
 

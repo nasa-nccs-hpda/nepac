@@ -96,7 +96,8 @@ class ILProcessController():
 
             retcode = subprocess.run(_worker,
                                      shell=True,
-                                     check=True)
+                                     check=True,
+                                     text=True)
             print(retcode)
 
         except OSError as e:
