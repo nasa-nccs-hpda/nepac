@@ -1,0 +1,17 @@
+Bootstrap: localimage
+FROM: ./core-2.0.0.sif
+
+%help
+===========================================================================
+	- nepac (extends -> core) – ILAB dependencies:
+===========================================================================
+
+%environment
+    # set PYTHONPATH for access to nepac code
+    export PYTHONPATH="$PYTHONPATH:/usr/local/nepac"
+
+%post
+    # retrieve nepac source from git repository and open permissions
+    mkdir -p /usr/local/nepac
+    git clone --single-branch --branch new-data-sources https://github.com/nasa-nccs-hpda/nepac.git /usr/local/nepac
+    chmod a+rwx -R /usr/local/nepac
