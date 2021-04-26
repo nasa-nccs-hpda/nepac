@@ -11,6 +11,10 @@ FROM: ./core-2.0.0.sif
     export PYTHONPATH="$PYTHONPATH:/usr/local/nepac"
 
 %post
+
+    # Tkinter, a GUI framework
+    sudo apt-get install -y python3-tk
+
     # retrieve nepac source from git repository and open permissions
     mkdir -p /usr/local/nepac
     git clone --single-branch --branch new-data-sources https://github.com/nasa-nccs-hpda/nepac.git /usr/local/nepac
