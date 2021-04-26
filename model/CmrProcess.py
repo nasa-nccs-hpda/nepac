@@ -247,10 +247,9 @@ class CmrProcess(object):
             dayNight = hit['umm']['DataGranule']['DayNightFlag']
 
             if self._lonLat is not None:
-                spatialExtent = hit['umm'] + \
-                    ['SpatialExtent'] + \
-                    ['HorizontalSpatialDomain'] + \
-                    ['Geometry']
+                spatialExtent = hit['umm']['SpatialExten' +
+                                           't']['HorizontalSpatialDom' +
+                                                'ain']['Geometry']
                 withinPadding = self._checkDistanceFromPadding(
                     spatialExtent['BoundingRectangles'][0])
 
