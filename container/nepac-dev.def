@@ -1,5 +1,5 @@
 Bootstrap: localimage
-FROM: ./core-2.0.0.sif
+FROM: ./core-2.1.0.sif
 
 %help
 ===========================================================================
@@ -7,6 +7,7 @@ FROM: ./core-2.0.0.sif
 ===========================================================================
 
 %environment
+
     # set PYTHONPATH for access to nepac code
     export PYTHONPATH="$PYTHONPATH:/usr/local/nepac"
 
