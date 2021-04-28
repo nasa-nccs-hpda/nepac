@@ -15,11 +15,14 @@ class NepacProcessCelery(NepacProcess):
     # -------------------------------------------------------------------------
     # __init__
     # -------------------------------------------------------------------------
-    def __init__(self, nepacInputFile, missionDataSetDict, outputDir):
+    def __init__(self, nepacInputFile, missionDataSetDict, outputDir,
+                 noData=9999, erroredData=9998):
 
         super(NepacProcessCelery, self).__init__(nepacInputFile,
                                                  missionDataSetDict,
-                                                 outputDir)
+                                                 outputDir,
+                                                 noData=noData,
+                                                 erroredData=erroredData)
 
         self._outputDir = outputDir
         self._validateMissionDataSets(missionDataSetDict)
@@ -56,7 +59,9 @@ class NepacProcessCelery(NepacProcess):
                 timeDateLoc,
                 timeDateLocToChl[timeDateLoc],
                 self._missions,
-                self._outputDir)
+                self._outputDir,
+                noDataValue=self._noData,
+                erroredDataValue=self._erroredData)
                 for mission in self._missions],
                 NepacProcessCelery._processTimeDate.s(
                 timeDate=timeDateLoc,
@@ -147,11 +152,15 @@ class NepacProcessCelery(NepacProcess):
     # -------------------------------------------------------------------------
     @staticmethod
     @app.task()
-    def _processMission(mission, timeDateLoc, chls, missions, outputDir):
+    def _processMission(mission, timeDateLoc, chls, missions, outputDir,
+                        noDataValue=9999, erroredDataValue=9998):
 
-        nepacOutput = NepacProcess._processMission(mission,
-                                                   timeDateLoc,
-                                                   chls,
-                                                   missions,
-                                                   outputDir)
+        nepacOutput = NepacProcess._processMission(
+            mission,
+            timeDateLoc,
+            chls,
+            missions,
+            outputDir,
+            noDataValue=noDataValue,
+            erroredDataValue=erroredDataValue)
         return nepacOutput

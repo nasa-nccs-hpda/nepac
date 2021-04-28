@@ -1,14 +1,18 @@
 import csv
 import datetime
 import errno
+import math
 import os
 
-import numpy as np
-from numpy.core.numeric import NaN
-import xarray as xr
-
 from core.model.BaseFile import BaseFile
+from nepac.model.Retriever import Retriever
+from nepac.model.BosswRetriever import BosswRetriever
+from nepac.model.EtopoRetriever import EtopoRetriever
+from nepac.model.OcSWFHICOCTRetriever import OcSWFHICOCTRetriever
 from nepac.model.OceanColorRetriever import OceanColorRetriever
+from nepac.model.OccciRetriever import OccciRetriever
+from nepac.model.OisstRetriever import OisstRetriever
+from nepac.model.PosstRetriever import PosstRetriever
 
 
 # -----------------------------------------------------------------------------
@@ -69,13 +73,39 @@ class NepacProcess(object):
                    'Longitude',
                    'CHLA (ug/L)']
 
+    # Maps each mission to its' specific retriever.
+    OBJECT_DICTIONARY = {
+        'MODIS-Aqua': OceanColorRetriever,
+        'CZCS': OceanColorRetriever,
+        'GOCI': OceanColorRetriever,
+        'HICO': OcSWFHICOCTRetriever,
+        'OCTS': OcSWFHICOCTRetriever,
+        'SeaWiFS': OcSWFHICOCTRetriever,
+        'MODIS-Terra': OceanColorRetriever,
+        'VIIRS-SNPP': OceanColorRetriever,
+        'VIIRS-JPSS1': OceanColorRetriever,
+        'OC-CCI': OccciRetriever,
+        'OI-SST': OisstRetriever,
+        'BO-SSW': BosswRetriever,
+        'PO-SST': PosstRetriever,
+        'ETOPO1-BED': EtopoRetriever,
+        'ETOPO1-ICE': EtopoRetriever
+    }
+
+    # OB DAAC sensors which are not populated in NASA Earth's CMR.
+    NON_CMR_SENSORS = ['OCTS', 'SeaWiFS', 'HICO']
+
+    # Placeholder index variable if no valid location was found.
+    NO_DATA_IDX = -1
+
     # -------------------------------------------------------------------------
     # __init__
     #
     # The input file contains the observations.  The data sets to add are in
     # missionDataSetDict.
     # -------------------------------------------------------------------------
-    def __init__(self, nepacInputFile, missionDataSetDict, outputDir):
+    def __init__(self, nepacInputFile, missionDataSetDict, outputDir,
+                 noData=9999, erroredData=9998):
 
         if not isinstance(nepacInputFile, BaseFile):
 
@@ -97,6 +127,8 @@ class NepacProcess(object):
         self._outputDir = outputDir
         self._validateMissionDataSets(missionDataSetDict)
         self._missions = missionDataSetDict
+        self._noData = noData
+        self._erroredData = erroredData
 
     # -------------------------------------------------------------------------
     # validateMissionDataSets
@@ -130,11 +162,13 @@ class NepacProcess(object):
 
         # Read the input file and aggregate by mission.
         timeDateLocToChl = self._readInputFile()
-
         # Get the pixel values for each mission.
         rowsToWrite = []
+
         for i, timeDateLoc in enumerate(timeDateLocToChl):
+
             print('Processing row: {}/{}'.format(i+1, len(timeDateLocToChl)))
+
             # ----------------------------------------------------------------
             # The data returned from self._processTimeDate takes the form of:
             # { missionName1 :
@@ -158,7 +192,9 @@ class NepacProcess(object):
             ex = self._processTimeDateLoc(timeDateLoc,
                                           timeDateLocToChl[timeDateLoc],
                                           self._missions,
-                                          self._outputDir)
+                                          self._outputDir,
+                                          noDataValue=self._noData,
+                                          erroredDataValue=self._erroredData)
             rowsPerTimeDateLoc = []
 
             for j, (missionKey, missionVals) in enumerate(ex.items()):
@@ -182,6 +218,7 @@ class NepacProcess(object):
         # Write the output file.
         outFileName = os.path.splitext(
             os.path.basename(self._inputFile.fileName()))
+
         outFileName = outFileName[0] + \
             self.RESULT_APPEND_STRING + \
             outFileName[1]
@@ -241,16 +278,28 @@ class NepacProcess(object):
                 # combination determines a mission file name through a CMR
                 # search.
                 # ---
-                timeDateLocKey = (row['Time (UTC)'].strip(),
-                                  row['Date'].strip(),
-                                  row['Latitude'].strip(),
-                                  row['Longitude'].strip())
+                dateTimeRow = row['DateTime'].strip()
+                dateTimeRowWithSecond = str(dateTimeRow)+':00'
+                dtFormat = datetime.datetime.strptime(dateTimeRowWithSecond,
+                                                      '%Y-%m-%dT%H:%M:%S')
+                time = dtFormat.strftime('%H:%M:%S')
+                date = dtFormat.strftime('%m/%d/%Y')
+
+                try:
+                    lat = row['\ufeffLat'].strip()
+                except KeyError:
+                    lat = row['Lat'].strip()
+
+                timeDateLocKey = (time,
+                                  date,
+                                  lat,
+                                  row['Lon'].strip())
 
                 if timeDateLocKey not in timeDateLocToChl:
                     timeDateLocToChl[timeDateLocKey] = []
 
                 timeDateLocToChl[timeDateLocKey]. \
-                    append((row['CHLA (ug/L)'].strip()))
+                    append((row['Chla_all'].strip()))
 
         return timeDateLocToChl
 
@@ -281,7 +330,8 @@ class NepacProcess(object):
     # }
     # ------------------------------------------------------------------------
     @staticmethod
-    def _processTimeDateLoc(timeDateLoc, Chls, missions, outputDir):
+    def _processTimeDateLoc(timeDateLoc, Chls, missions, outputDir,
+                            noDataValue=9999, erroredDataValue=9998):
 
         print('Processing', timeDateLoc)
 
@@ -294,7 +344,9 @@ class NepacProcess(object):
                                              timeDateLoc,
                                              Chls,
                                              missions,
-                                             outputDir)
+                                             outputDir,
+                                             noDataValue=noDataValue,
+                                             erroredDataValue=erroredDataValue)
             valuesPerMissionDict.update(dictOutput)
 
         sortedValuesPerMissionDict = dict(
@@ -304,60 +356,113 @@ class NepacProcess(object):
         return sortedValuesPerMissionDict
 
     # ------------------------------------------------------------------------
-    # processMission
+    # _processMission()
     #
-    # This can be distributed.
+    # Method to:
+    # (a) Determine the correct Retriever object based off of
+    # mission.
+    # (b) Run the retriever to find, download, and extract data.
+    # (c) Check for any errors encountered in retrieval process.
+    # (d) Construct a data packet to return which contains pixel vals per
+    # dataset requested, or if an error occured, place a user-given
+    # value as the pixel value.
     # ------------------------------------------------------------------------
     @staticmethod
-    def _processMission(mission, timeDateLoc, chls, missions, outputDir):
-        print('MISSION: {}, TDL: {}'.format(
-            mission, timeDateLoc))
+    def _processMission(mission, timeDateLoc, chls, missions, outputDir,
+                        noDataValue=9999, erroredDataValue=9998):
+        print('MISSION: {}, TDL: {}'.format(mission, timeDateLoc))
+        xIdx = None
+        yIdx = None
+        latLonFound = True
+
         timeDateSplit = str(timeDateLoc[1]) + 'T' + str(timeDateLoc[0])
+
         dt = datetime.datetime.strptime(timeDateSplit,
                                         NepacProcess.DATE_FORMAT)
+
         trueLatLon = (float(timeDateLoc[2]),
                       float(timeDateLoc[3]))
+        retrieverLonLat = (timeDateLoc[3],
+                           timeDateLoc[2])
 
-        missionFile = NepacProcess.searchDownloadOceanColorRetriever(
+        retrieverObject = NepacProcess.OBJECT_DICTIONARY[mission](
             mission,
             dt,
-            timeDateLoc
-        )
+            retrieverLonLat)
 
-        dataArrayMerged = NepacProcess.extractDataset(missionFile)
+        dataset, _, retrieverError = retrieverObject.run()
         dataSets = missions[mission]
         nepacOutputDict = {}
 
-        x_idx, y_idx = NepacProcess.getLatLonIndex(dataArrayMerged,
-                                                   trueLatLon[0],
-                                                   trueLatLon[1]
-                                                   )
-        foundLatLon = (float(dataArrayMerged.latitude[x_idx][y_idx]),
-                       float(dataArrayMerged.longitude[x_idx][y_idx])
-                       )
+        # Mission requires geo-locating.
+        if not retrieverObject.GEOREFERENCED:
 
-        print('Given location: Lat={} Lon={}'.format(
-            trueLatLon[0], trueLatLon[1]))
-        print('Closes location: Lat={} Lon={}'.format(
-            foundLatLon[0],
-            foundLatLon[1]
-        ))
+            # ---
+            # Mission requires special retriever to search through
+            # multiple files to find the correct orbit. Since files
+            # are already being geolocated we can get the correct indices
+            # now rather than geolocating again with other sensors.
+            # ---
+            if mission in NepacProcess.NON_CMR_SENSORS:
 
-        latlonFoundOutOfBounds = NepacProcess.checkLatLonOutOfWindow(
-            trueLatLon,
-            foundLatLon)
+                xIdx = retrieverObject.xIdx
+                yIdx = retrieverObject.yIdx
 
-        for sub in sorted(dataArrayMerged.variables):
+            else:
+
+                # ---
+                # Given a non-georeferenced dataset, geolocate the specific
+                # point to look for. Return the indices, and whether the
+                # closest valid location was within a spatial window.
+                # ---
+                xIdx, yIdx = Retriever.geoLocate(
+                    dataset, trueLatLon[0], trueLatLon[1], quiet=True,
+                    error=retrieverError)
+
+            if xIdx == NepacProcess.NO_DATA_IDX and \
+                    yIdx == NepacProcess.NO_DATA_IDX:
+                retrieverError = True
+
+        for sub in sorted(dataset.variables):
 
             datasetName = sub
 
             if datasetName in dataSets:
 
-                val = dataArrayMerged[datasetName].sel(number_of_lines=x_idx,
-                                                       pixels_per_line=y_idx)
+                # We need to sample pixel via indices.
+                if not retrieverObject.GEOREFERENCED:
 
-                # Return NAN if closest location not within our window.
-                val = float(val) if not latlonFoundOutOfBounds else NaN
+                    val = dataset[datasetName].sel(number_of_lines=xIdx,
+                                                   pixels_per_line=yIdx)
+
+                    val = float(val)
+
+                    # ---
+                    # If any flags were thrown, write out no-data number
+                    # or errored-pixel number.
+                    # ---
+                    val = float(erroredDataValue) if retrieverError \
+                        else val
+                    val = float(noDataValue) if math.isnan(val) \
+                        or not latLonFound \
+                        else val
+
+                # We need to sample pixel via lat,lon (L3/L4 data).
+                else:
+
+                    val = dataset[datasetName].sel(lat=trueLatLon[0],
+                                                   lon=trueLatLon[1],
+                                                   method='nearest')
+
+                    val = float(val)
+                    val = float(erroredDataValue) if retrieverError \
+                        else val
+                    val = float(noDataValue) if math.isnan(val) \
+                        else val
+
+                # Some sensors require a function to be applied to the val.
+                if retrieverObject.SPECIAL_VALUE_FUNCTION:
+                    val = retrieverObject.retrieverValueFunction(val)
 
                 timeDateLocChlKey = (
                     timeDateLoc[0],
@@ -379,112 +484,6 @@ class NepacProcess(object):
 
                     nepacOutputDict[timeDateLocChlKey].append(val)
 
-        if os.path.exists(missionFile):
-
-            os.remove(missionFile)
-
         nepacMissionOutput = {}
         nepacMissionOutput[mission] = nepacOutputDict
-
         return nepacMissionOutput
-
-    # ------------------------------------------------------------------------
-    # searchDownloadOceanColorRetriever()
-    #
-    # Intantiate and run an OceanColorRetriever object which will query
-    # and download the appropriate OB DAAC NetCDF file.
-    #
-    # If the file was not properly downloaded but no error was raised in
-    # running OCR, we can conclude that a concurrency problem occured
-    # from CELERY with an improper download. Try it again. The assumption is
-    # that the error case would likely never be encountered during a
-    # linear run, only a parallel run should we find something like this.
-    # ------------------------------------------------------------------------
-    @staticmethod
-    def searchDownloadOceanColorRetriever(mission, dt, timeDateLoc):
-        ocr = OceanColorRetriever(mission=mission,
-                                  dateTime=dt,
-                                  lonLat=(timeDateLoc[3], timeDateLoc[2]),
-                                  dayNightFlag='')
-        missionFile, _ = ocr.run()
-        if not os.path.exists(missionFile):
-            print('{} was not properly downloaded.\n Retrying'.format(
-                missionFile))
-            ocr = OceanColorRetriever(mission=mission,
-                                      dateTime=dt,
-                                      lonLat=(timeDateLoc[3], timeDateLoc[2]),
-                                      dayNightFlag='')
-            missionFile, _ = ocr.run()
-            if not os.path.exists(missionFile):
-                msg = '{} not succesfully downloaded'.format(missionFile)
-                raise RuntimeError(msg)
-        return missionFile
-
-    # ------------------------------------------------------------------------
-    # extractDataset()
-    #
-    # Extract the given mission file to an xarray ndarray. Merge necessary
-    # sub-datasets (LAT/LON/L2_FLAGS/Bands)
-    # ------------------------------------------------------------------------
-
-    @staticmethod
-    def extractDataset(missionFile):
-        dataArrayGeo = xr.open_dataset(missionFile,
-                                       group=NepacProcess.GEOPHYSICAL_GROUP)
-        dataArrayNav = xr.open_dataset(missionFile,
-                                       group=NepacProcess.NAVIGATION_GROUP)
-        dataArrayMerged = xr.merge(
-            [dataArrayNav.latitude,
-             dataArrayNav.longitude,
-             dataArrayGeo])
-
-        # ---
-        # FOR REVIEW: This is my C brain coming out. Is this necessary
-        # and/or desired to trigger garbage collection?
-        # ---
-        dataArrayGeo = None
-        dataArrayNav = None
-        return dataArrayMerged
-
-    # ------------------------------------------------------------------------
-    # getLatLonIndex()
-    #
-    # Given an xarray ndarray (dataset), and a given location, find the
-    # closest valid location.
-    # Valid is defined as what we're not looking for (no cloud/ice, no land).
-    # ------------------------------------------------------------------------
-    @staticmethod
-    def getLatLonIndex(xrDset, lat, lon):
-        nanarray = np.empty(xrDset.l2_flags.shape)
-        nanarray.fill(np.nan)
-        condition = (
-            (xrDset.l2_flags &
-             NepacProcess.L2_FLAGS_MASKS[NepacProcess.CURRENT_FLAG])
-            > 0)
-        condLats = np.where(condition,
-                            nanarray, xrDset.latitude)
-        condLons = np.where(condition,
-                            nanarray, xrDset.longitude)
-        diffSquared = (condLats - lat)**2 + (condLons - lon)**2
-        argm = np.nanargmin(diffSquared)
-        x_loc, y_loc = np.unravel_index(argm, diffSquared.shape)
-        return x_loc, y_loc
-
-    # ------------------------------------------------------------------------
-    # checkLatLonOutOfWindow()
-    #
-    # Given a ground truth location (trueLatLon) and a location found via
-    # getLatLonIndex(), determine if any valid solutions were found.
-    #
-    # Validity is determined by a window (NepacProcess.DEGREE_PATRIENCE).
-    # ------------------------------------------------------------------------
-    @staticmethod
-    def checkLatLonOutOfWindow(trueLatLon, foundLatLon):
-        latlonFoundOutOfBounds = False
-        for i, latLon in enumerate(trueLatLon):
-            abs_diff = abs(latLon - foundLatLon[i])
-            if abs_diff > NepacProcess.DEGREE_PATIENCE:
-                latlonFoundOutOfBounds = True
-                print('No valid location found (out of bounds)')
-                print('Distance difference: {}'.format(abs_diff))
-        return latlonFoundOutOfBounds

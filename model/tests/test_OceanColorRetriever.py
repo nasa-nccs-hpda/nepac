@@ -31,9 +31,8 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
             OceanColorRetriever('invalidMission', validDateTime, validLocation)
 
-        with self.assertRaisesRegex(RuntimeError, 'Invalid date:'):
-            OceanColorRetriever('MODIS-Aqua', invalidDateTime, validLocation)
-
+        rt = OceanColorRetriever('MODIS-Aqua', invalidDateTime, validLocation)
+        self.assertTrue(rt._error)
         # Test valid everything.
         OceanColorRetriever('MODIS-Aqua', validDateTime, validLocation)
 
@@ -63,15 +62,15 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         invalidLatLocation = ('-180', '180')
         validLocation = ('-76.51005', '39.07851')
 
-        with self.assertRaisesRegex(RuntimeError, 'Invalid l'):
-            OceanColorRetriever('VIIRS-SNPP',
-                                validDateTime,
-                                invalidLonLocation)
+        rt = OceanColorRetriever('VIIRS-SNPP',
+                                 validDateTime,
+                                 invalidLonLocation)
+        self.assertTrue(rt._error)
 
-        with self.assertRaisesRegex(RuntimeError, 'Invalid l'):
-            OceanColorRetriever('VIIRS-JPSS1',
-                                validDateTime,
-                                invalidLatLocation)
+        rt = OceanColorRetriever('VIIRS-JPSS1',
+                                 validDateTime,
+                                 invalidLatLocation)
+        self.assertTrue(rt._error)
 
         OceanColorRetriever('VIIRS-SNPP', validDateTime, validLocation)
 
@@ -86,13 +85,13 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         invalidDt = datetime.datetime.today()
         invalidLoc = ('-77.1739', '38.6082')
 
-        with self.assertRaisesRegex(RuntimeError, 'Could not find'):
-            invalidModisaOCR = OceanColorRetriever(
+        invalidModisaOCR = OceanColorRetriever(
                 'MODIS-Aqua',
                 invalidDt,
                 invalidLoc,
                 outputDirectory=tmp_directory)
-            invalidModisaOCR.run()
+        invalidModisaOCR.run()
+        self.assertTrue(invalidModisaOCR._error)
 
         # ---
         # Test valid date time.
