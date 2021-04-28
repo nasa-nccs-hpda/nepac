@@ -5,7 +5,7 @@ from tkinter import scrolledtext
 from tkinter.constants import LEFT
 from tkinter import filedialog
 
-from nepac.model.RetrieverBase import Retriever
+from nepac.model.Retriever import Retriever
 from nepac.model.ILProcessController import ILProcessController
 from nepac.model.NepacProcessCelery import NepacProcessCelery
 

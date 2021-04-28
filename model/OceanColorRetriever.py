@@ -3,7 +3,7 @@ import warnings
 
 from nepac.model.libraries.obdaac_download import httpdl
 from nepac.model.CmrProcess import CmrProcess
-from nepac.model.RetrieverBase import Retriever
+from nepac.model.Retriever import Retriever
 
 
 # -----------------------------------------------------------------------------

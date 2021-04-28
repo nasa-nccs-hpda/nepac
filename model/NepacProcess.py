@@ -5,7 +5,7 @@ import math
 import os
 
 from core.model.BaseFile import BaseFile
-from nepac.model.RetrieverBase import Retriever
+from nepac.model.Retriever import Retriever
 from nepac.model.BosswRetriever import BosswRetriever
 from nepac.model.EtopoRetriever import EtopoRetriever
 from nepac.model.OcSWFHICOCTRetriever import OcSWFHICOCTRetriever

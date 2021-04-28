@@ -1,6 +1,6 @@
 import os
 
-from nepac.model.RetrieverBase import Retriever
+from nepac.model.Retriever import Retriever
 
 
 # -----------------------------------------------------------------------------
