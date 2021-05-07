@@ -115,9 +115,7 @@ class ILProcessController():
                   ILProcessController.backendProcessId)
 
             # Shutdown the Celery workers
-            shutdownWorkers = "/usr/bin/pkill -9 -f  " + \
-                              ILProcessController.celeryConfig
-            SystemCommand(shutdownWorkers, None, True)
+            app.control.broadcast('shutdown')
 
             return True
 
