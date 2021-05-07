@@ -25,6 +25,7 @@ class EtopoRetriever(Retriever):
     def __init__(self,
                  mission,
                  dateTime,
+                 dummyPath,
                  lonLat=None,
                  outputDirectory='.'):
 
@@ -35,6 +36,7 @@ class EtopoRetriever(Retriever):
         self._error = self.validateLonLat(lonLat, error=self._error)
         self._error = self.validate(mission, dateTime, error=self._error)
         self._lonLat = lonLat
+        self._dummyPath = dummyPath
 
     # -------------------------------------------------------------------------
     # run()
@@ -54,6 +56,7 @@ class EtopoRetriever(Retriever):
                                                  error=self._error)
 
         return self.extractDataset(outputPath,
+                                   self._dummyPath,
                                    latLonIndexing=self.LAT_LON_INDEXING,
                                    removeFile=False,
                                    mission=self._mission,

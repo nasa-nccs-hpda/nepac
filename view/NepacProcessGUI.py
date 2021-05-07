@@ -25,8 +25,10 @@ class NepacProcessGUI(tk.Frame):
     GEOMETRY = '2000x1000'
     FILE_PATH_DEFAULT = 'NO CSV FILE SELECTED'
     FILE_BUTTON_TEXT = 'Choose file as input'
-    FOLDER_PATH_DEFAULT = 'NO OUTPUT DIRECTORY SELECTED'
-    FOLDER_BUTTON_TEXT = 'Choose directory as output directory'
+    OUTPUT_FOLDER_PATH_DEFAULT = 'NO OUTPUT DIRECTORY SELECTED'
+    OUTPUT_FOLDER_BUTTON_TEXT = 'Choose directory as output directory'
+    DUMMY_FOLDER_PATH_DEFAULT = 'NO DUMMY DATASET DIRECTORY SELECTED'
+    DUMMY_FOLDER_BUTTON_TEXT = 'Choose directory as dummy dataset directory'
     NO_DATA_TEXT = 'No-data value: '
     ERRORED_DATA_TEXT = 'Errored-data value: '
     SUBMIT_JOB_TEXT = 'Run Nepac Process'
@@ -65,10 +67,18 @@ class NepacProcessGUI(tk.Frame):
         self._createErroredPixelEntry()
 
         self.outputFilePath = tk.StringVar()
-        self.outputFilePath.set(self.FOLDER_PATH_DEFAULT)
+        self.outputFilePath.set(self.OUTPUT_FOLDER_PATH_DEFAULT)
         self.outputFilePathButton = self._createFilePath(
             filePath=self.outputFilePath)
-        self._createFolderSearch()
+        self._createOutputFolderSearch(
+            buttonText=self.OUTPUT_FOLDER_BUTTON_TEXT)
+
+        self.dummyDataPath = tk.StringVar()
+        self.dummyDataPath.set(self.DUMMY_FOLDER_PATH_DEFAULT)
+        self.dummyDataPathButton = self._createFilePath(
+            filePath=self.dummyDataPath
+        )
+        self._createDummyFolderSearch(buttonText=self.DUMMY_FOLDER_BUTTON_TEXT)
 
         self.win = self._addLogWindow()
         sys.stdout = self.win.log
@@ -120,28 +130,46 @@ class NepacProcessGUI(tk.Frame):
         self.row += 1
 
     # -------------------------------------------------------------------------
-    # _createFolderSearch()
+    # _createOutputFolderSearch()
     #
     # Similar to _createFileSearch but with an open directory dialog as output.
     # -------------------------------------------------------------------------
-    def _createFolderSearch(self):
+    def _createOutputFolderSearch(self, buttonText):
         buttonToOpenFolder = tk.Button(master=self.master,
-                                       text=self.FOLDER_BUTTON_TEXT,
-                                       command=self._openFolderDialog)
+                                       text=buttonText,
+                                       command=self._openOutputFolderDialog)
         buttonToOpenFolder.grid(column=0, row=self.row)
         self.row += 1
 
     # -------------------------------------------------------------------------
+    # _createDummyFolderSearch()
+    #
+    # Similar to _createFileSearch but with an open directory dialog as output.
+    # -------------------------------------------------------------------------
+    def _createDummyFolderSearch(self, buttonText):
+        buttonToOpenFolder = tk.Button(master=self.master,
+                                       text=buttonText,
+                                       command=self._openDummyFolderDialog)
+        buttonToOpenFolder.grid(column=0, row=self.row)
+        self.row += 1
+    # -------------------------------------------------------------------------
     # _openFileDialog()
     # -------------------------------------------------------------------------
+
     def _openFileDialog(self):
         self.filePath.set(filedialog.askopenfilename())
 
     # -------------------------------------------------------------------------
-    # _openFolderDialog()
+    # _openOutputFolderDialog()
     # -------------------------------------------------------------------------
-    def _openFolderDialog(self):
+    def _openOutputFolderDialog(self):
         self.outputFilePath.set(filedialog.askdirectory())
+
+    # -------------------------------------------------------------------------
+    # _openDummyFolderDialog()
+    # -------------------------------------------------------------------------
+    def _openDummyFolderDialog(self):
+        self.dummyDataPath.set(filedialog.askdirectory())
 
     # -------------------------------------------------------------------------
     # _populateButtons()
@@ -282,6 +310,7 @@ class NepacProcessGUI(tk.Frame):
                 self.filePath.get(),
                 self.missionInputDict,
                 outputDir=self.outputFilePath.get(),
+                dummyPath=self.dummyDataPath.get(),
                 noData=self.noData.get(),
                 erroredData=self.erroredData.get())
             nepacProcess.run()

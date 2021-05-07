@@ -26,6 +26,7 @@ class OisstRetriever(Retriever):
     def __init__(self,
                  mission,
                  dateTime,
+                 dummyPath,
                  lonLat=None,
                  subDatasets=['sst'],
                  outputDirectory='.'):
@@ -40,6 +41,7 @@ class OisstRetriever(Retriever):
         self._error = self.validate(mission, dateTime, error=self._error)
         self._error = self.validateLonLat(lonLat, error=self._error)
         self._lonLat = lonLat
+        self._dummyPath = dummyPath
         self._subDatasets = subDatasets
 
     # -------------------------------------------------------------------------
@@ -68,6 +70,7 @@ class OisstRetriever(Retriever):
                                                  error=self._error)
 
         return self.extractDataset(outputPath,
+                                   self._dummyPath,
                                    latLonIndexing=self.LAT_LON_INDEXING,
                                    mission=self._mission,
                                    error=self._error)

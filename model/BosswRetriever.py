@@ -26,6 +26,7 @@ class BosswRetriever(Retriever):
     def __init__(self,
                  mission,
                  dateTime,
+                 dummyPath,
                  lonLat=None,
                  subDatasets=['tau', 'taux', 'tauy'],
                  outputDirectory='.'):
@@ -41,6 +42,7 @@ class BosswRetriever(Retriever):
                                     error=self._error)
         self._error = self.validateLonLat(lonLat,
                                           error=self._error)
+        self._dummyPath = dummyPath
         self._lonLat = lonLat
         self._subDatasets = subDatasets
 
@@ -69,6 +71,7 @@ class BosswRetriever(Retriever):
                                                  self._mission,
                                                  error=self._error)
         return self.extractDataset(outputPath,
+                                   self._dummyPath,
                                    mission=self._mission,
                                    latLonIndexing=self.LAT_LON_INDEXING,
                                    error=self._error)

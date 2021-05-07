@@ -52,6 +52,7 @@ class OcSWFHICOCTRetriever(Retriever):
     def __init__(self,
                  mission,
                  dateTime,
+                 dummyPath,
                  lonLat=None,
                  dayNightFlag='',
                  outputDirectory='.'):
@@ -64,6 +65,7 @@ class OcSWFHICOCTRetriever(Retriever):
         self._error = self.validate(mission, dateTime, error=self._error)
 
         self._lonLat = lonLat
+        self._dummyPath = dummyPath
         self._dayNightFlag = dayNightFlag
         self.xIdx = None
         self.yIdx = None
@@ -157,6 +159,7 @@ class OcSWFHICOCTRetriever(Retriever):
         if error:
             dataset, _, self._error = self.extractAndMergeDataset(
                 fileList[0],
+                self._dummyPath,
                 removeFile=False,
                 mission=self._mission,
                 error=error
@@ -181,6 +184,7 @@ class OcSWFHICOCTRetriever(Retriever):
 
                 dataset, _, self._error = self.extractAndMergeDataset(
                     filePath,
+                    self._dummyPath,
                     removeFile=True,
                     mission=self._mission,
                     error=error
@@ -208,6 +212,7 @@ class OcSWFHICOCTRetriever(Retriever):
 
                 dataset, _, self._error = self.extractAndMergeDataset(
                     fileList[0],
+                    self._dummyPath,
                     removeFile=False,
                     mission=self._mission,
                     error=error

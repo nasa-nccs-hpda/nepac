@@ -105,7 +105,7 @@ class NepacProcess(object):
     # missionDataSetDict.
     # -------------------------------------------------------------------------
     def __init__(self, nepacInputFile, missionDataSetDict, outputDir,
-                 noData=9999, erroredData=9998):
+                 dummyPath, noData=9999, erroredData=9998):
 
         if not isinstance(nepacInputFile, BaseFile):
 
@@ -123,10 +123,15 @@ class NepacProcess(object):
             raise FileNotFoundError(errno.ENOENT,
                                     os.strerror(errno.ENOENT),
                                     outputDir)
+        if not os.path.isdir(dummyPath):
+            raise FileNotFoundError(errno.ENOENT,
+                                    os.strerror(errno.ENOENT),
+                                    dummyPath)
 
         self._outputDir = outputDir
         self._validateMissionDataSets(missionDataSetDict)
         self._missions = missionDataSetDict
+        self._dummyPath = dummyPath
         self._noData = noData
         self._erroredData = erroredData
 
@@ -193,6 +198,7 @@ class NepacProcess(object):
                                           timeDateLocToChl[timeDateLoc],
                                           self._missions,
                                           self._outputDir,
+                                          self._dummyPath,
                                           noDataValue=self._noData,
                                           erroredDataValue=self._erroredData)
             rowsPerTimeDateLoc = []
@@ -331,7 +337,8 @@ class NepacProcess(object):
     # ------------------------------------------------------------------------
     @staticmethod
     def _processTimeDateLoc(timeDateLoc, Chls, missions, outputDir,
-                            noDataValue=9999, erroredDataValue=9998):
+                            dummyPath, noDataValue=9999,
+                            erroredDataValue=9998):
 
         print('Processing', timeDateLoc)
 
@@ -345,6 +352,7 @@ class NepacProcess(object):
                                              Chls,
                                              missions,
                                              outputDir,
+                                             dummyPath,
                                              noDataValue=noDataValue,
                                              erroredDataValue=erroredDataValue)
             valuesPerMissionDict.update(dictOutput)
@@ -369,7 +377,7 @@ class NepacProcess(object):
     # ------------------------------------------------------------------------
     @staticmethod
     def _processMission(mission, timeDateLoc, chls, missions, outputDir,
-                        noDataValue=9999, erroredDataValue=9998):
+                        dummyPath, noDataValue=9999, erroredDataValue=9998):
         print('MISSION: {}, TDL: {}'.format(mission, timeDateLoc))
         xIdx = None
         yIdx = None
@@ -388,6 +396,7 @@ class NepacProcess(object):
         retrieverObject = NepacProcess.OBJECT_DICTIONARY[mission](
             mission,
             dt,
+            dummyPath,
             retrieverLonLat)
 
         dataset, _, retrieverError = retrieverObject.run()

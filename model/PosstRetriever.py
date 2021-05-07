@@ -26,6 +26,7 @@ class PosstRetriever(Retriever):
     def __init__(self,
                  mission,
                  dateTime,
+                 dummyPath,
                  lonLat=None,
                  subDatasets=['analysed_sst'],
                  outputDirectory='.'):
@@ -40,6 +41,7 @@ class PosstRetriever(Retriever):
         self._error = self.validate(mission, dateTime, error=self._error)
         self._error = self.validateLonLat(lonLat, error=self._error)
         self._lonLat = lonLat
+        self._dummyPath = dummyPath
         self._subDatasets = subDatasets
 
     # -------------------------------------------------------------------------
@@ -72,6 +74,7 @@ class PosstRetriever(Retriever):
                                                  error=self._error)
 
         return self.extractDataset(outputPath,
+                                   self._dummyPath,
                                    mission=self._mission,
                                    latLonIndexing=self.LAT_LON_INDEXING,
                                    error=self._error)

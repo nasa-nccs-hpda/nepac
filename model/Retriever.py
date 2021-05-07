@@ -150,8 +150,10 @@ class Retriever(object):
     def __init__(self,
                  mission,
                  dateTime,
+                 datasetDirectory,
                  outputDirectory='.'):
         self._error = False
+        self._datasetDirectory = datasetDirectory
         self._mission = mission
         self._dateTime = dateTime
         self._outputDirectory = outputDirectory
@@ -243,17 +245,21 @@ class Retriever(object):
     # encountered, flag it, and use a backup 'dummy' dataset.
     # -------------------------------------------------------------------------
     @staticmethod
-    def extractAndMergeDataset(missionFile, removeFile=True, mission=None,
+    def extractAndMergeDataset(missionFile, dummyPath, removeFile=True, mission=None,
                                error=False):
         # Preemptive error check. Don't run below code if error.
         if error:
-            missionFile, removeFile = Retriever.getDummyDataset(mission)
+            missionFile, removeFile = Retriever.getDummyDataset(
+                dummyPath,
+                mission)
         try:
             dataArrayGeo = xr.open_dataset(missionFile,
                                            group=Retriever.GEOPHYSICAL_GROUP)
         except OSError:
             error = True
-            missionFile, removeFile = Retriever.getDummyDataset(mission)
+            missionFile, removeFile = Retriever.getDummyDataset(
+                dummyPath,
+                mission)
             dataArrayGeo = xr.open_dataset(
                 missionFile,
                 group=Retriever.GEOPHYSICAL_GROUP)
@@ -263,7 +269,9 @@ class Retriever(object):
                 group=Retriever.NAVIGATION_GROUP)
         except OSError:
             error = True
-            missionFile, removeFile = Retriever.getDummyDataset(mission)
+            missionFile, removeFile = Retriever.getDummyDataset(
+                dummyPath,
+                mission)
             dataArrayNav = xr.open_dataset(
                 missionFile,
                 group=Retriever.NAVIGATION_GROUP)
@@ -288,8 +296,8 @@ class Retriever(object):
     # NepacProcess running smooth even if an error was caught.
     # -------------------------------------------------------------------------
     @ staticmethod
-    def getDummyDataset(mission):
-        missionFile = os.path.join(Retriever.DATASET_PATHS,
+    def getDummyDataset(path, mission):
+        missionFile = os.path.join(path,
                                    Retriever.MISSION_DUMMY_DATASETS[mission])
         removeFile = False
         return missionFile, removeFile
@@ -305,12 +313,14 @@ class Retriever(object):
     # encountered, flag it, and use a backup 'dummy' dataset.
     # -------------------------------------------------------------------------
     @ staticmethod
-    def extractDataset(missionFile, mission=None, latLonIndexing=True,
+    def extractDataset(missionFile, dummyPath, mission=None, latLonIndexing=True,
                        removeFile=True, error=False):
         # Preemptive check for an error. Don't run code below if error.
         if error:
             error = True
-            missionFile, removeFile = Retriever.getDummyDataset(mission)
+            missionFile, removeFile = Retriever.getDummyDataset(
+                dummyPath,
+                mission)
             print(missionFile)  # TMP
             print(removeFile)  # TMP
 
@@ -319,7 +329,9 @@ class Retriever(object):
         except OSError:
             # Something happened, use a backup dataset
             error = True
-            missionFile, removeFile = Retriever.getDummyDataset(mission)
+            missionFile, removeFile = Retriever.getDummyDataset(
+                dummyPath,
+                mission)
             dataset = xr.open_dataset(missionFile)
         if not latLonIndexing:
             # For sanity's sake, rename these to their proper name.

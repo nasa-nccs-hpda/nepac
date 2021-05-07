@@ -59,6 +59,10 @@ def main():
                         'from.\n' +
                         'Example use of this argument looks like: \n' +
                         '\"MODIS-Terra:Rrs_443 MODIS-Aqua:ipar\"\n')
+    
+    parser.add_argument('-d',
+                        type=str,
+                        help='Path to dummy datasets')
 
     args = parser.parse_args()
 
@@ -101,6 +105,7 @@ def main():
             np = NepacProcessCelery(args.f,
                                     missionDataSetDict,
                                     args.o,
+                                    args.d,
                                     noData=args.no_data,
                                     erroredData=args.errored_data)
             np.run()
@@ -108,6 +113,7 @@ def main():
         np = NepacProcess(args.f,
                           missionDataSetDict,
                           args.o,
+                          args.d,
                           noData=args.no_data,
                           erroredData=args.errored_data)
         np.run()
