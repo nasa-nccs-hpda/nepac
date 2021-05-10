@@ -15,12 +15,16 @@ class NepacProcessCelery(NepacProcess):
     # -------------------------------------------------------------------------
     # __init__
     # -------------------------------------------------------------------------
-    def __init__(self, nepacInputFile, missionDataSetDict, outputDir):
+    def __init__(self, nepacInputFile, missionDataSetDict, outputDir,
+                 dummyPath, noData=9999, erroredData=9998):
 
         super(NepacProcessCelery, self).__init__(nepacInputFile,
                                                  missionDataSetDict,
-                                                 outputDir)
-
+                                                 outputDir,
+                                                 dummyPath,
+                                                 noData=noData,
+                                                 erroredData=erroredData)
+        self._dummyPath = dummyPath
         self._outputDir = outputDir
         self._validateMissionDataSets(missionDataSetDict)
         self._missions = missionDataSetDict
@@ -56,13 +60,17 @@ class NepacProcessCelery(NepacProcess):
                 timeDateLoc,
                 timeDateLocToChl[timeDateLoc],
                 self._missions,
-                self._outputDir)
+                self._outputDir,
+                self._dummyPath,
+                noDataValue=self._noData,
+                erroredDataValue=self._erroredData)
                 for mission in self._missions],
                 NepacProcessCelery._processTimeDate.s(
                 timeDate=timeDateLoc,
                 locsChls=timeDateLocToChl[timeDateLoc],
                 missions=self._missions,
-                outputDir=self._outputDir)) for timeDateLoc in timeDateLocToChl
+                outputDir=self._outputDir,
+                dummyPath=self._dummyPath)) for timeDateLoc in timeDateLocToChl
         ])
 
         chordPerTimeDateLocResult = chordPerTimeDateLoc.apply_async()
@@ -127,7 +135,8 @@ class NepacProcessCelery(NepacProcess):
                          timeDate=None,
                          locsChls=None,
                          missions=None,
-                         outputDir=None):
+                         outputDir=None,
+                         dummyPath=None):
 
         # Add the pixel data in an aggregated per-mission dictionary.
         valuesPerMissionDict = {}
@@ -147,11 +156,16 @@ class NepacProcessCelery(NepacProcess):
     # -------------------------------------------------------------------------
     @staticmethod
     @app.task()
-    def _processMission(mission, timeDateLoc, chls, missions, outputDir):
+    def _processMission(mission, timeDateLoc, chls, missions, outputDir,
+                        dummyPath, noDataValue=9999, erroredDataValue=9998):
 
-        nepacOutput = NepacProcess._processMission(mission,
-                                                   timeDateLoc,
-                                                   chls,
-                                                   missions,
-                                                   outputDir)
+        nepacOutput = NepacProcess._processMission(
+            mission,
+            timeDateLoc,
+            chls,
+            missions,
+            outputDir,
+            dummyPath,
+            noDataValue=noDataValue,
+            erroredDataValue=erroredDataValue)
         return nepacOutput

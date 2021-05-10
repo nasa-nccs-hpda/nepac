@@ -96,7 +96,8 @@ class ILProcessController():
 
             retcode = subprocess.run(_worker,
                                      shell=True,
-                                     check=True)
+                                     check=True,
+                                     text=True)
             print(retcode)
 
         except OSError as e:
@@ -114,9 +115,7 @@ class ILProcessController():
                   ILProcessController.backendProcessId)
 
             # Shutdown the Celery workers
-            shutdownWorkers = "/usr/bin/pkill -9 -f  " + \
-                              ILProcessController.celeryConfig
-            SystemCommand(shutdownWorkers, None, True)
+            app.control.broadcast('shutdown')
 
             return True
 

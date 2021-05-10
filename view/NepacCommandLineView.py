@@ -1,7 +1,6 @@
 import argparse
 import sys
 import os
-
 from nepac.model.ILProcessController import ILProcessController
 from nepac.model.NepacProcessCelery import NepacProcessCelery
 from nepac.model.NepacProcess import NepacProcess
@@ -22,6 +21,17 @@ def main():
                         action='store_true',
                         help='The option to use celery to distribute' +
                         ' the tasks.')
+
+    parser.add_argument('-no_data',
+                        required=False,
+                        default=9999,
+                        help='No data value.')
+
+    parser.add_argument('-errored_data',
+                        required=False,
+                        default=9998,
+                        help='Data value to set' +
+                        ' when NEPAC DR encounters an error.')
 
     parser.add_argument('-f',
                         required=True,
@@ -49,6 +59,10 @@ def main():
                         'from.\n' +
                         'Example use of this argument looks like: \n' +
                         '\"MODIS-Terra:Rrs_443 MODIS-Aqua:ipar\"\n')
+    
+    parser.add_argument('-d',
+                        type=str,
+                        help='Path to dummy datasets')
 
     args = parser.parse_args()
 
@@ -90,12 +104,18 @@ def main():
         with ILProcessController() as processController:
             np = NepacProcessCelery(args.f,
                                     missionDataSetDict,
-                                    args.o)
+                                    args.o,
+                                    args.d,
+                                    noData=args.no_data,
+                                    erroredData=args.errored_data)
             np.run()
     else:
         np = NepacProcess(args.f,
                           missionDataSetDict,
-                          args.o)
+                          args.o,
+                          args.d,
+                          noData=args.no_data,
+                          erroredData=args.errored_data)
         np.run()
 
 
