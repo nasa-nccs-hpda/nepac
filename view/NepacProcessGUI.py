@@ -17,7 +17,7 @@ from nepac.model.NepacProcessCelery import NepacProcessCelery
 # -------------------------------------------------------------------------
 class NepacProcessGUI(tk.Frame):
 
-    ROW_SPAN = 14
+    ROW_SPAN = 12
     DEFAULT_NO_DATA = 9999
     DEFAULT_ERRORED_DATA = 9888
 
@@ -53,11 +53,6 @@ class NepacProcessGUI(tk.Frame):
         self._configureGui()
         self._createTitle()
 
-        self.filePath = tk.StringVar()
-        self.filePath.set(self.FILE_PATH_DEFAULT)
-        self.filePathButton = self._createFilePath(filePath=self.filePath)
-        self._createFileSearch()
-
         self._populateButtons()
 
         self.noData = tk.IntVar(value=self.DEFAULT_NO_DATA)
@@ -65,6 +60,11 @@ class NepacProcessGUI(tk.Frame):
 
         self.erroredData = tk.IntVar(value=self.DEFAULT_ERRORED_DATA)
         self._createErroredPixelEntry()
+
+        self.filePath = tk.StringVar()
+        self.filePath.set(self.FILE_PATH_DEFAULT)
+        self.filePathButton = self._createFilePath(filePath=self.filePath)
+        self._createFileSearch()
 
         self.outputFilePath = tk.StringVar()
         self.outputFilePath.set(self.OUTPUT_FOLDER_PATH_DEFAULT)
