@@ -1,4 +1,6 @@
 import os
+import tarfile
+import tempfile
 import unittest
 
 from nepac.model.NepacProcess import NepacProcess
@@ -44,50 +46,70 @@ class NepacProcessTestCase(unittest.TestCase):
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         # Input file does not exist.
         with self.assertRaisesRegex(RuntimeError, '.*does not exist.*'):
 
-            NepacProcess('bogusFile', None, None)
+            NepacProcess('bogusFile', None, None, tmpDataDir)
 
         # Valid input file, no mission dictionary.
         with self.assertRaisesRegex(ValueError, 'A mission-to'):
 
-            NepacProcess(NepacProcessTestCase.IN_FILE1, None, '.')
+            NepacProcess(NepacProcessTestCase.IN_FILE1, None, '.', tmpDataDir)
 
         # Valid input file and mission dictionary, invalid output directory.
         with self.assertRaisesRegex(ValueError, 'An output directory'):
 
             NepacProcess(NepacProcessTestCase.IN_FILE1,
                          NepacProcessTestCase.MISSION_DICT1,
-                         None)
+                         None,
+                         tmpDataDir)
 
         with self.assertRaisesRegex(ValueError, 'Invalid data set'):
 
             NepacProcess(NepacProcessTestCase.IN_FILE1,
                          NepacProcessTestCase.BAD_MISSION_DICT,
-                         '.')
+                         '.',
+                         tmpDataDir)
 
         # Valid everything.
         NepacProcess(NepacProcessTestCase.IN_FILE1,
                      NepacProcessTestCase.MISSION_DICT1,
-                     '.')
+                     '.',
+                     tmpDataDir)
         NepacProcess(NepacProcessTestCase.IN_FILE2,
                      NepacProcessTestCase.MISSION_DICT2,
-                     '.')
+                     '.',
+                     tmpDataDir)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         # Valid everything
         np1 = NepacProcess(NepacProcessTestCase.IN_FILE1,
                            NepacProcessTestCase.MISSION_DICT1,
-                           '.')
+                           '.',
+                           tmpDataDir)
         np1.run()
 
         np2 = NepacProcess(NepacProcessTestCase.IN_FILE2,
                            NepacProcessTestCase.MISSION_DICT2,
-                           '.')
+                           '.',
+                           tmpDataDir)
         np2.run()

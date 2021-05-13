@@ -1,6 +1,8 @@
 import datetime
-import unittest
+import os
+import tarfile
 import tempfile
+import unittest
 
 from nepac.model.OccciRetriever import OccciRetriever
 
@@ -21,7 +23,14 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2004, 1, 1)
         invalidDateTime = datetime.datetime(1970, 1, 1)
         validLocation = ('-76.51005', '39.07851')
@@ -29,12 +38,12 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            OccciRetriever('invalidMission', validDateTime, validLocation)
+            OccciRetriever('invalidMission', validDateTime, tmpDataDir, validLocation)
 
-        rt = OccciRetriever('OC-CCI', invalidDateTime, validLocation)
+        rt = OccciRetriever('OC-CCI', invalidDateTime, tmpDataDir, validLocation)
         self.assertTrue(rt._error)
         # Test valid everything.
-        OccciRetriever('OC-CCI', validDateTime, validLocation)
+        OccciRetriever('OC-CCI', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -53,7 +62,14 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
                                           month=12,
                                           day=11,
@@ -64,21 +80,30 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
 
         rt = OccciRetriever('OC-CCI',
                             validDateTime,
+                            tmpDataDir,
                             invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = OccciRetriever('OC-CCI',
                             validDateTime,
+                            tmpDataDir,
                             invalidLatLocation)
         self.assertTrue(rt._error)
 
-        OccciRetriever('OC-CCI', validDateTime, validLocation)
+        OccciRetriever('OC-CCI', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # ---
@@ -94,6 +119,7 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
 
         occciOCR = OccciRetriever('OC-CCI',
                                   validOccciDt,
+                                  tmpDataDir,
                                   validOccciLoc,
                                   outputDirectory=tmp_directory)
         occciOCR.run()

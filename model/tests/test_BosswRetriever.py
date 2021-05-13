@@ -1,6 +1,8 @@
 import datetime
-import unittest
+import os
+import tarfile
 import tempfile
+import unittest
 
 from nepac.model.BosswRetriever import BosswRetriever
 
@@ -21,7 +23,14 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2010, 1, 1)
         invalidDateTime = datetime.date.today()
         validLocation = ('-76.51005', '39.07851')
@@ -29,13 +38,13 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            BosswRetriever('invalidMission', validDateTime, validLocation)
+            BosswRetriever('invalidMission', validDateTime, tmpDataDir, validLocation)
 
-        rt = BosswRetriever('BO-SSW', invalidDateTime, validLocation)
+        rt = BosswRetriever('BO-SSW', invalidDateTime, tmpDataDir, validLocation)
         self.assertTrue(rt._error)
 
         # Test valid everything.
-        BosswRetriever('BO-SSW', validDateTime, validLocation)
+        BosswRetriever('BO-SSW', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -54,7 +63,14 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2010,
                                           month=12,
                                           day=11,
@@ -65,21 +81,30 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         rt = BosswRetriever('BO-SSW',
                             validDateTime,
+                            tmpDataDir,
                             invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = BosswRetriever('BO-SSW',
                             validDateTime,
+                            tmpDataDir,
                             invalidLatLocation)
         self.assertTrue(rt._error)
 
-        BosswRetriever('BO-SSW', validDateTime, validLocation)
+        BosswRetriever('BO-SSW', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # ---
@@ -95,6 +120,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         bosswR = BosswRetriever('BO-SSW',
                                 validBosswDt,
+                                tmpDataDir,
                                 validBosswLoc,
                                 outputDirectory=tmp_directory)
         bosswR.run()

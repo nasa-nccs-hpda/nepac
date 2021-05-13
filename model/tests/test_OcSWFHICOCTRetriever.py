@@ -1,4 +1,6 @@
 import datetime
+import os
+import tarfile
 import tempfile
 import unittest
 
@@ -21,7 +23,14 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'SEAWIFS.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2002, 1, 1)
         invalidDateTime = datetime.datetime(2012, 1, 1)
         validLocation = ('-76.51005', '39.07851')
@@ -30,14 +39,17 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
             OcSWFHICOCTRetriever('invalidMission', validDateTime,
+                                 tmpDataDir,
                                  validLocation)
 
         # Test invalid datetime
-        rt = OcSWFHICOCTRetriever('SeaWiFS', invalidDateTime, validLocation)
+        rt = OcSWFHICOCTRetriever(
+            'SeaWiFS', invalidDateTime, tmpDataDir, validLocation)
         self.assertTrue(rt._error)
 
         # Test valid everything.
-        OcSWFHICOCTRetriever('SeaWiFS', validDateTime, validLocation)
+        OcSWFHICOCTRetriever('SeaWiFS', validDateTime,
+                             tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -56,7 +68,14 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'OCTS.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2009,
                                           month=12,
                                           day=11,
@@ -67,21 +86,30 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
 
         rt = OcSWFHICOCTRetriever('SeaWiFS',
                                   validDateTime,
+                                  tmpDataDir,
                                   invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = OcSWFHICOCTRetriever('SeaWiFS',
                                   validDateTime,
+                                  tmpDataDir,
                                   invalidLatLocation)
         self.assertTrue(rt._error)
 
-        OcSWFHICOCTRetriever('SeaWiFS', validDateTime, validLocation)
+        OcSWFHICOCTRetriever('SeaWiFS', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'HICO.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # ---
@@ -98,6 +126,7 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
 
         swfOCR = OcSWFHICOCTRetriever('SeaWiFS',
                                       validSWFDt,
+                                      tmpDataDir,
                                       validLoc,
                                       outputDirectory=tmp_directory)
         swfOCR.run()
@@ -110,6 +139,7 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
 
         octsOCR = OcSWFHICOCTRetriever('OCTS',
                                        validOCTSDt,
+                                       tmpDataDir,
                                        validLoc,
                                        outputDirectory=tmp_directory)
         octsOCR.run()
@@ -122,6 +152,7 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
 
         hicoOCR = OcSWFHICOCTRetriever('HICO',
                                        validHICODt,
+                                       tmpDataDir,
                                        validLoc,
                                        outputDirectory=tmp_directory)
         hicoOCR.run()

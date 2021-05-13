@@ -1,5 +1,7 @@
 import datetime
+import os
 import unittest
+import tarfile
 import tempfile
 
 from nepac.model.PosstRetriever import PosstRetriever
@@ -21,7 +23,14 @@ class PosstRetrieverTestCase(unittest.TestCase):
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'POSST.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2020, 1, 1)
         invalidDateTime = datetime.datetime(1970, 1, 1)
         validLocation = ('-76.51005', '39.07851')
@@ -29,13 +38,13 @@ class PosstRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            PosstRetriever('invalid', validDateTime, validLocation)
+            PosstRetriever('invalid', validDateTime, tmpDataDir, validLocation)
 
-        rt = PosstRetriever('PO-SST', invalidDateTime, validLocation)
+        rt = PosstRetriever('PO-SST', invalidDateTime, tmpDataDir, validLocation)
         self.assertTrue(rt._error)
 
         # Test valid everything.
-        PosstRetriever('PO-SST', validDateTime, validLocation)
+        PosstRetriever('PO-SST', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -54,7 +63,14 @@ class PosstRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'POSST.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
                                           month=12,
                                           day=11,
@@ -65,20 +81,29 @@ class PosstRetrieverTestCase(unittest.TestCase):
 
         rt = PosstRetriever('PO-SST',
                             validDateTime,
+                            tmpDataDir,
                             invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = PosstRetriever('PO-SST',
                             validDateTime,
+                            tmpDataDir,
                             invalidLatLocation)
         self.assertTrue(rt._error)
-        PosstRetriever('PO-SST', validDateTime, validLocation)
+        PosstRetriever('PO-SST', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'POSST.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
         # ---
         # Test valid date time.
@@ -93,6 +118,7 @@ class PosstRetrieverTestCase(unittest.TestCase):
 
         posstR = PosstRetriever('PO-SST',
                                 validModisDt,
+                                tmpDataDir,
                                 validModisLoc,
                                 outputDirectory=tmp_directory)
         posstR.run()

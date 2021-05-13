@@ -1,5 +1,8 @@
+import os
 import datetime
 import unittest
+import shutil
+import tarfile
 import tempfile
 
 from nepac.model.OisstRetriever import OisstRetriever
@@ -21,7 +24,14 @@ class OisstRetrieverTestCase(unittest.TestCase):
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
+            pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2020, 1, 1)
         invalidDateTime = datetime.datetime(1970, 1, 1)
         validLocation = ('-76.51005', '39.07851')
@@ -29,12 +39,12 @@ class OisstRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            OisstRetriever('invalid', validDateTime, validLocation)
+            OisstRetriever('invalid', validDateTime, tmpDataDir, validLocation)
 
-        rt = OisstRetriever('OI-SST', invalidDateTime, validLocation)
+        rt = OisstRetriever('OI-SST', invalidDateTime, tmpDataDir, validLocation)
         self.assertTrue(rt._error)
         # Test valid everything.
-        OisstRetriever('OI-SST', validDateTime, validLocation)
+        OisstRetriever('OI-SST', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -53,7 +63,14 @@ class OisstRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
+            pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
                                           month=12,
                                           day=11,
@@ -64,21 +81,30 @@ class OisstRetrieverTestCase(unittest.TestCase):
 
         rt = OisstRetriever('OI-SST',
                             validDateTime,
+                            tmpDataDir,
                             invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = OisstRetriever('OI-SST',
                             validDateTime,
+                            tmpDataDir,
                             invalidLatLocation)
         self.assertTrue(rt._error)
 
-        OisstRetriever('OI-SST', validDateTime, validLocation)
+        OisstRetriever('OI-SST', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-
+        tmpDir = tempfile.gettempdir()
+        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
+        if not os.path.exists(tmpDataDir):
+            tmpDataDir = os.mkdir(tmpDataDir)
+        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
+            tar = tarfile.open(pathToDummySet)
+            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # ---
@@ -94,6 +120,7 @@ class OisstRetrieverTestCase(unittest.TestCase):
 
         oisstR = OisstRetriever('OI-SST',
                                 validModisDt,
+                                tmpDataDir,
                                 validModisLoc,
                                 outputDirectory=tmp_directory)
         oisstR.run()
