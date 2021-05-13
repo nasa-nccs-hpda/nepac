@@ -1,0 +1,22 @@
+Bootstrap: localimage
+FROM: ./core-2.1.0.sif
+
+%help
+===========================================================================
+	- nepac (extends -> core) – ILAB dependencies:
+===========================================================================
+
+%environment
+
+    # set PYTHONPATH for access to nepac code
+    export PYTHONPATH="$PYTHONPATH:/usr/local/nepac"
+
+%post
+
+    # Tkinter, a GUI framework
+    sudo apt-get install -y python3-tk
+
+    # retrieve nepac source from git repository and open permissions
+    mkdir -p /usr/local/nepac
+    git clone --single-branch --branch develop https://github.com/nasa-nccs-hpda/nepac.git /usr/local/nepac
+    chmod a+rwx -R /usr/local/nepac
