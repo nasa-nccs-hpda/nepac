@@ -1,0 +1,4 @@
+module load singularity
+singularity run -B /att /att/nobackup/cssprad1/nepac-sandbox.sif \
+/usr/bin/python \
+/usr/local/nepac/view/NepacProcessGUI.py

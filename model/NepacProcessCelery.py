@@ -31,11 +31,56 @@ class NepacProcessCelery(NepacProcess):
 
     # -------------------------------------------------------------------------
     # run
+    # -------------------------------------------------------------------------
+    def run(self):
+
+        # Read the input file and aggregate by mission.
+        timeDateLocToChl = self._readInputFile()
+
+        # Write the output file.
+        outFileName = os.path.splitext(
+            os.path.basename(self._inputFile.fileName()))
+        outFileName = outFileName[0] + \
+            self.RESULT_APPEND_STRING + \
+            outFileName[1]
+        outputFile = os.path.join(self._outputDir,
+                                  outFileName)
+        self._initializeCSV(outputFile)
+
+        chunkedDict = self._splitDict(timeDateLocToChl,
+                                      NepacProcess.CHUNK_SIZE)
+        numChunks = len(chunkedDict)
+        for i, chunk in enumerate(chunkedDict):
+            print('Processing chunk {} of {}'.format(i+1, numChunks))
+            self._process(chunk, outputFile)
+        NepacProcess.removeNCFiles()
+
+    # -------------------------------------------------------------------------
+    # initializeCSV
+    # -------------------------------------------------------------------------
+    def _initializeCSV(self, outputFile):
+        # Start writing to CSV
+        with open(outputFile, 'w') as csvfile:
+
+            csvwriter = csv.writer(csvfile)
+
+            # Start with base fields
+            fields = self.CSV_HEADERS
+
+            # Sort keys in missions to match incoming data, add to fields.
+            for mission in sorted(self._missions.keys()):
+                for subDataSet in sorted(self._missions[mission]):
+                    fields.append(str(mission+'-'+subDataSet))
+
+            csvwriter.writerow(fields)
+
+    # -------------------------------------------------------------------------
+    # process
     #
-    # See NepacProcess.run() for detailed comments.
+    # See NepacProcess.process() for detailed comments.
     #
     # In order to keep from deadlocks, NepacProcessCelery._processMission()
-    # is called directly from run through a Celery chord, with
+    # is called directly from process through a Celery chord, with
     # NepacProcessCelery._processTimeDate() as the callback function.
     # This allows all workers to be safely spawned
     # to run _processMission() for each mission to get pixel data from. Once
@@ -46,11 +91,7 @@ class NepacProcessCelery(NepacProcess):
     # group where a chord is made for each time-date-loc present in the input
     # file.
     # -------------------------------------------------------------------------
-    def run(self):
-
-        # Read the input file and aggregate by mission.
-        timeDateLocToChl = self._readInputFile()
-
+    def _process(self, timeDateLocToChl, outputFile):
         # Get the pixel values for each mission.
         rowsToWrite = []
 
@@ -100,37 +141,30 @@ class NepacProcessCelery(NepacProcess):
             # Write this timeDate's data rows to the overall rows.
             rowsToWrite.extend(rowsPerTimeDate)
 
-        # Write the output file.
-        outFileName = os.path.splitext(
-            os.path.basename(self._inputFile.fileName()))
-        outFileName = outFileName[0] + \
-            self.RESULT_APPEND_STRING + \
-            outFileName[1]
-
-        outputFile = os.path.join(self._outputDir,
-                                  outFileName)
-
         # Start writing to CSV
-        with open(outputFile, 'w') as csvfile:
-
+        with open(outputFile, 'a') as csvfile:
             csvwriter = csv.writer(csvfile)
-
-            # Start with base fields
-            fields = self.CSV_HEADERS
-
-            # Sort keys in missions to match incoming data, add to fields.
-            for mission in sorted(self._missions.keys()):
-                for subDataSet in sorted(self._missions[mission]):
-                    fields.append(str(mission+'-'+subDataSet))
-
-            csvwriter.writerow(fields)
             csvwriter.writerows(rowsToWrite)
+
+    # -------------------------------------------------------------------------
+    # splitDict
+    # -------------------------------------------------------------------------
+    def _splitDict(self, dictInput, n):
+        keys = list(dictInput.keys())
+        splitKeys = [keys[i: i+n] for i in range(0, len(keys), n)]
+        outputList = []
+        for chunk in splitKeys:
+            newDict = {}
+            for key in chunk:
+                newDict[key] = dictInput[key]
+            outputList.append(newDict)
+        return outputList
 
     # -------------------------------------------------------------------------
     # processTimeDate
     # -------------------------------------------------------------------------
     @staticmethod
-    @app.task()
+    @app.task(autoretry_for=(Exception,))
     def _processTimeDate(missionDictList,
                          timeDate=None,
                          locsChls=None,
@@ -155,7 +189,7 @@ class NepacProcessCelery(NepacProcess):
     # processMission
     # -------------------------------------------------------------------------
     @staticmethod
-    @app.task()
+    @app.task(autoretry_for=(Exception,), retry_backoff=True)
     def _processMission(mission, timeDateLoc, chls, missions, outputDir,
                         dummyPath, noDataValue=9999, erroredDataValue=9998):
 
