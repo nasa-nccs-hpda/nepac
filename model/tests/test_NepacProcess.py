@@ -18,6 +18,9 @@ from nepac.model.NepacProcess import NepacProcess
 # -----------------------------------------------------------------------------
 class NepacProcessTestCase(unittest.TestCase):
 
+    NO_DATA = -9999
+    ERRORED_DATA = -9998
+
     IN_FILE1 = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             'nepacInputOne.csv')
 
@@ -57,12 +60,22 @@ class NepacProcessTestCase(unittest.TestCase):
         # Input file does not exist.
         with self.assertRaisesRegex(RuntimeError, '.*does not exist.*'):
 
-            NepacProcess('bogusFile', None, None, tmpDataDir)
+            NepacProcess('bogusFile',
+                         None,
+                         None,
+                         tmpDataDir,
+                         NepacProcessTestCase.NO_DATA,
+                         NepacProcessTestCase.ERRORED_DATA)
 
         # Valid input file, no mission dictionary.
         with self.assertRaisesRegex(ValueError, 'A mission-to'):
 
-            NepacProcess(NepacProcessTestCase.IN_FILE1, None, '.', tmpDataDir)
+            NepacProcess(NepacProcessTestCase.IN_FILE1,
+                         None,
+                         '.',
+                         tmpDataDir,
+                         NepacProcessTestCase.NO_DATA,
+                         NepacProcessTestCase.ERRORED_DATA)
 
         # Valid input file and mission dictionary, invalid output directory.
         with self.assertRaisesRegex(ValueError, 'An output directory'):
@@ -70,24 +83,33 @@ class NepacProcessTestCase(unittest.TestCase):
             NepacProcess(NepacProcessTestCase.IN_FILE1,
                          NepacProcessTestCase.MISSION_DICT1,
                          None,
-                         tmpDataDir)
+                         tmpDataDir,
+                         NepacProcessTestCase.NO_DATA,
+                         NepacProcessTestCase.ERRORED_DATA)
 
         with self.assertRaisesRegex(ValueError, 'Invalid data set'):
 
             NepacProcess(NepacProcessTestCase.IN_FILE1,
                          NepacProcessTestCase.BAD_MISSION_DICT,
                          '.',
-                         tmpDataDir)
+                         tmpDataDir,
+                         NepacProcessTestCase.NO_DATA,
+                         NepacProcessTestCase.ERRORED_DATA)
 
         # Valid everything.
         NepacProcess(NepacProcessTestCase.IN_FILE1,
                      NepacProcessTestCase.MISSION_DICT1,
                      '.',
-                     tmpDataDir)
+                     tmpDataDir,
+                     NepacProcessTestCase.NO_DATA,
+                     NepacProcessTestCase.ERRORED_DATA)
+
         NepacProcess(NepacProcessTestCase.IN_FILE2,
                      NepacProcessTestCase.MISSION_DICT2,
                      '.',
-                     tmpDataDir)
+                     tmpDataDir,
+                     NepacProcessTestCase.NO_DATA,
+                     NepacProcessTestCase.ERRORED_DATA)
 
     # -------------------------------------------------------------------------
     # testRun
@@ -105,11 +127,15 @@ class NepacProcessTestCase(unittest.TestCase):
         np1 = NepacProcess(NepacProcessTestCase.IN_FILE1,
                            NepacProcessTestCase.MISSION_DICT1,
                            '.',
-                           tmpDataDir)
+                           tmpDataDir,
+                           NepacProcessTestCase.NO_DATA,
+                           NepacProcessTestCase.ERRORED_DATA)
         np1.run()
 
         np2 = NepacProcess(NepacProcessTestCase.IN_FILE2,
                            NepacProcessTestCase.MISSION_DICT2,
                            '.',
-                           tmpDataDir)
+                           tmpDataDir,
+                           NepacProcessTestCase.NO_DATA,
+                           NepacProcessTestCase.ERRORED_DATA)
         np2.run()

@@ -18,8 +18,8 @@ from nepac.model.NepacProcessCelery import NepacProcessCelery
 class NepacProcessGUI(tk.Frame):
 
     ROW_SPAN = 12
-    DEFAULT_NO_DATA = 9999
-    DEFAULT_ERRORED_DATA = 9888
+    DEFAULT_NO_DATA = -9999
+    DEFAULT_ERRORED_DATA = -9998
 
     TITLE = 'NEPAC Data Retriever'
     GEOMETRY = '2000x1000'
@@ -27,7 +27,7 @@ class NepacProcessGUI(tk.Frame):
     FILE_BUTTON_TEXT = 'Choose file as input'
     OUTPUT_FOLDER_PATH_DEFAULT = 'NO OUTPUT DIRECTORY SELECTED'
     OUTPUT_FOLDER_BUTTON_TEXT = 'Choose directory as output directory'
-    DUMMY_FOLDER_PATH_DEFAULT = 'NO DUMMY DATASET DIRECTORY SELECTED'
+    DUMMY_FOLDER_PATH_DEFAULT = '/usr/local/nepac/model/datasets'
     DUMMY_FOLDER_BUTTON_TEXT = 'Choose directory as dummy dataset directory'
     NO_DATA_TEXT = 'No-data value: '
     ERRORED_DATA_TEXT = 'Errored-data value: '
@@ -306,14 +306,19 @@ class NepacProcessGUI(tk.Frame):
         for k, v in self.missionInputDict.items():
             self.missionInputDict[k] = list(v)
         with ILProcessController() as processController:
-            nepacProcess = NepacProcessCelery(
-                self.filePath.get(),
-                self.missionInputDict,
-                outputDir=self.outputFilePath.get(),
-                dummyPath=self.dummyDataPath.get(),
-                noData=self.noData.get(),
-                erroredData=self.erroredData.get())
-            nepacProcess.run()
+            try:
+                nepacProcess = NepacProcessCelery(
+                    self.filePath.get(),
+                    self.missionInputDict,
+                    outputDir=self.outputFilePath.get(),
+                    dummyPath=self.dummyDataPath.get(),
+                    noData=self.noData.get(),
+                    erroredData=self.erroredData.get())
+                nepacProcess.run()
+            except Exception as e:
+                errorStr = 'Encountered error: {}.'.format(e) +\
+                    'Shutting down workers.'
+                print(errorStr)
         print('Finished job, you may exit this application.')
 
     # -------------------------------------------------------------------------
