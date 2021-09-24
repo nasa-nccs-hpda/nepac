@@ -110,7 +110,7 @@ class NepacProcess(object):
     # missionDataSetDict.
     # -------------------------------------------------------------------------
     def __init__(self, nepacInputFile, missionDataSetDict, outputDir,
-                 dummyPath, noData=9999, erroredData=9998):
+                 dummyPath, noData, erroredData):
 
         if not isinstance(nepacInputFile, BaseFile):
 

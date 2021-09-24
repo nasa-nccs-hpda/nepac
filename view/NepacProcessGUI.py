@@ -18,8 +18,8 @@ from nepac.model.NepacProcessCelery import NepacProcessCelery
 class NepacProcessGUI(tk.Frame):
 
     ROW_SPAN = 12
-    DEFAULT_NO_DATA = 9999
-    DEFAULT_ERRORED_DATA = 9888
+    DEFAULT_NO_DATA = -9999
+    DEFAULT_ERRORED_DATA = -9998
 
     TITLE = 'NEPAC Data Retriever'
     GEOMETRY = '2000x1000'

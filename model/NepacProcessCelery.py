@@ -16,7 +16,7 @@ class NepacProcessCelery(NepacProcess):
     # __init__
     # -------------------------------------------------------------------------
     def __init__(self, nepacInputFile, missionDataSetDict, outputDir,
-                 dummyPath, noData=9999, erroredData=9998):
+                 dummyPath, noData, erroredData):
 
         super(NepacProcessCelery, self).__init__(nepacInputFile,
                                                  missionDataSetDict,
@@ -54,25 +54,6 @@ class NepacProcessCelery(NepacProcess):
             print('Processing chunk {} of {}'.format(i+1, numChunks))
             self._process(chunk, outputFile)
         NepacProcess.removeNCFiles()
-
-    # -------------------------------------------------------------------------
-    # initializeCSV
-    # -------------------------------------------------------------------------
-    def _initializeCSV(self, outputFile):
-        # Start writing to CSV
-        with open(outputFile, 'w') as csvfile:
-
-            csvwriter = csv.writer(csvfile)
-
-            # Start with base fields
-            fields = self.CSV_HEADERS
-
-            # Sort keys in missions to match incoming data, add to fields.
-            for mission in sorted(self._missions.keys()):
-                for subDataSet in sorted(self._missions[mission]):
-                    fields.append(str(mission+'-'+subDataSet))
-
-            csvwriter.writerow(fields)
 
     # -------------------------------------------------------------------------
     # process
@@ -145,20 +126,6 @@ class NepacProcessCelery(NepacProcess):
         with open(outputFile, 'a') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerows(rowsToWrite)
-
-    # -------------------------------------------------------------------------
-    # splitDict
-    # -------------------------------------------------------------------------
-    def _splitDict(self, dictInput, n):
-        keys = list(dictInput.keys())
-        splitKeys = [keys[i: i+n] for i in range(0, len(keys), n)]
-        outputList = []
-        for chunk in splitKeys:
-            newDict = {}
-            for key in chunk:
-                newDict[key] = dictInput[key]
-            outputList.append(newDict)
-        return outputList
 
     # -------------------------------------------------------------------------
     # processTimeDate

@@ -13,6 +13,8 @@ from nepac.model.NepacProcess import NepacProcess
 # nepac/model/tests/nepacInputTwo.csv -m 'MODIS-Terra:Rrs_443 MODIS-Aqua:ipar'
 # -----------------------------------------------------------------------------
 def main():
+    DEFAULT_NO_DATA = -9999
+    DEFAULT_ERRORED_DATA = -9998
 
     desc = 'This application runs NepacProcess'
     parser = argparse.ArgumentParser(description=desc)
@@ -24,12 +26,12 @@ def main():
 
     parser.add_argument('-no_data',
                         required=False,
-                        default=-9999,
+                        default=DEFAULT_NO_DATA,
                         help='No data value.')
 
     parser.add_argument('-errored_data',
                         required=False,
-                        default=-9998,
+                        default=DEFAULT_ERRORED_DATA,
                         help='Data value to set' +
                         ' when NEPAC DR encounters an error.')
 
