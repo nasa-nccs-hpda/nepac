@@ -31,7 +31,7 @@ class Retriever(object):
         'GOCI': ['chlor_a', 'Kd_490', 'poc', 'Rrs_412', 'Rrs_443', 'Rrs_490',
                  'Rrs_555', 'Rrs_660', 'Rrs_680'],
 
-        'HICO': ['Kd_490', 'pic', 'poc', 'Rrs_353', 'Rsf_358', 'Rrs_364',
+        'HICO': ['Kd_490', 'pic', 'poc', 'Rrs_353', 'Rrs_358', 'Rrs_364',
                  'Rrs_370', 'Rrs_375', 'Rrs_381', 'Rrs_387', 'Rrs_393',
                  'Rrs_398', 'Rrs_404', 'Rrs_410', 'Rrs_416', 'Rrs_421',
                  'Rrs_427', 'Rrs_433', 'Rrs_438', 'Rrs_444', 'Rrs_450',
@@ -220,7 +220,9 @@ class Retriever(object):
                 request = httpPoolManager.request('GET',
                                                   requestUrl,
                                                   preload_content=False)
-            except urllib3.exceptions.MaxRetryError:
+            except Exception as e:
+                errorStr = 'Encountered HTTP download exception: {}'.format(e)
+                warnings.warn(errorStr)
                 return True
             if self.catchHTTPError(int(request.status)):
                 request.release_conn()
@@ -245,8 +247,8 @@ class Retriever(object):
     # encountered, flag it, and use a backup 'dummy' dataset.
     # -------------------------------------------------------------------------
     @staticmethod
-    def extractAndMergeDataset(missionFile, dummyPath, removeFile=True, mission=None,
-                               error=False):
+    def extractAndMergeDataset(missionFile, dummyPath, removeFile=True,
+                               mission=None, error=False):
         # Preemptive error check. Don't run below code if error.
         if error:
             missionFile, removeFile = Retriever.getDummyDataset(
@@ -313,8 +315,8 @@ class Retriever(object):
     # encountered, flag it, and use a backup 'dummy' dataset.
     # -------------------------------------------------------------------------
     @ staticmethod
-    def extractDataset(missionFile, dummyPath, mission=None, latLonIndexing=True,
-                       removeFile=True, error=False):
+    def extractDataset(missionFile, dummyPath, mission=None,
+                       latLonIndexing=True, removeFile=True, error=False):
         # Preemptive check for an error. Don't run code below if error.
         if error:
             error = True

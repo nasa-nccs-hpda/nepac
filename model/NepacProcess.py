@@ -1,8 +1,10 @@
 import csv
 import datetime
+import glob
 import errno
 import math
 import os
+import warnings
 
 from core.model.BaseFile import BaseFile
 from nepac.model.Retriever import Retriever
@@ -98,6 +100,9 @@ class NepacProcess(object):
     # Placeholder index variable if no valid location was found.
     NO_DATA_IDX = -1
 
+    # Amount of rows to process in one round.
+    CHUNK_SIZE = 100
+
     # -------------------------------------------------------------------------
     # __init__
     #
@@ -105,7 +110,7 @@ class NepacProcess(object):
     # missionDataSetDict.
     # -------------------------------------------------------------------------
     def __init__(self, nepacInputFile, missionDataSetDict, outputDir,
-                 dummyPath, noData=9999, erroredData=9998):
+                 dummyPath, noData, erroredData):
 
         if not isinstance(nepacInputFile, BaseFile):
 
@@ -164,89 +169,26 @@ class NepacProcess(object):
     # formats and writes data extracted to file.
     # -------------------------------------------------------------------------
     def run(self):
-
         # Read the input file and aggregate by mission.
         timeDateLocToChl = self._readInputFile()
-        # Get the pixel values for each mission.
-        rowsToWrite = []
-
-        for i, timeDateLoc in enumerate(timeDateLocToChl):
-
-            print('Processing row: {}/{}'.format(i+1, len(timeDateLocToChl)))
-
-            # ----------------------------------------------------------------
-            # The data returned from self._processTimeDate takes the form of:
-            # { missionName1 :
-            #      {
-            #          (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
-            #          (time2, data2, lat2, long2, Chl-A2) : [pVal1, pVal2]
-            #       }
-            #   missionName2 :
-            #       {
-            #           (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
-            #       }
-            # }
-            # This data structure needs to be reduced to one key per row with
-            # aggregated values.
-            #
-            # [time1, date1, lat1, long1, Chl-A1,
-            #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
-            # [time2, date2, lat2, long2, Chl-a2,
-            #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
-            # ----------------------------------------------------------------
-            ex = self._processTimeDateLoc(timeDateLoc,
-                                          timeDateLocToChl[timeDateLoc],
-                                          self._missions,
-                                          self._outputDir,
-                                          self._dummyPath,
-                                          noDataValue=self._noData,
-                                          erroredDataValue=self._erroredData)
-            rowsPerTimeDateLoc = []
-
-            for j, (missionKey, missionVals) in enumerate(ex.items()):
-                for k, (rowKey, rowValues) in enumerate(missionVals.items()):
-
-                    # First time seeing these keys, new row.
-                    if j == 0:
-                        newRow = []
-                        rowKeyTuple = tuple(rowKey.split(","))
-                        newRow.extend(list(rowKeyTuple))
-                        newRow.extend(rowValues)
-                        rowsPerTimeDateLoc.append(newRow)
-
-                    # Keys are already present, append data.
-                    else:
-                        rowsPerTimeDateLoc[k].extend(rowValues)
-
-            # Write this timeDate's data rows to the overall rows.
-            rowsToWrite.extend(rowsPerTimeDateLoc)
 
         # Write the output file.
         outFileName = os.path.splitext(
             os.path.basename(self._inputFile.fileName()))
-
         outFileName = outFileName[0] + \
             self.RESULT_APPEND_STRING + \
             outFileName[1]
 
         outputFile = os.path.join(self._outputDir,
                                   outFileName)
-
-        # Start writing to CSV
-        with open(outputFile, 'w') as csvfile:
-
-            csvwriter = csv.writer(csvfile)
-
-            # Start with base fields
-            fields = self.CSV_HEADERS
-
-            # Sort keys in missions to match incoming data, add to fields.
-            for mission in sorted(self._missions.keys()):
-                for subDataSet in sorted(self._missions[mission]):
-                    fields.append(str(mission+'-'+subDataSet))
-
-            csvwriter.writerow(fields)
-            csvwriter.writerows(rowsToWrite)
+        self._initializeCSV(outputFile)
+        chunkedDict = self._splitDict(timeDateLocToChl,
+                                      NepacProcess.CHUNK_SIZE)
+        numChunks = len(chunkedDict)
+        for i, chunk in enumerate(chunkedDict):
+            print('Processing chunk {} of {}'.format(i+1, numChunks))
+            self._process(chunk, outputFile)
+        NepacProcess.removeNCFiles()
 
     # ------------------------------------------------------------------------
     # _readInputFile
@@ -308,6 +250,113 @@ class NepacProcess(object):
                     append((row['Chla_all'].strip()))
 
         return timeDateLocToChl
+
+    # -------------------------------------------------------------------------
+    # initializeCSV
+    # -------------------------------------------------------------------------
+    def _initializeCSV(self, outputFile):
+        # Start writing to CSV
+        with open(outputFile, 'w') as csvfile:
+
+            csvwriter = csv.writer(csvfile)
+
+            # Start with base fields
+            fields = self.CSV_HEADERS
+
+            # Sort keys in missions to match incoming data, add to fields.
+            for mission in sorted(self._missions.keys()):
+                for subDataSet in sorted(self._missions[mission]):
+                    fields.append(str(mission+'-'+subDataSet))
+
+            csvwriter.writerow(fields)
+
+    # -------------------------------------------------------------------------
+    # splitDict
+    # -------------------------------------------------------------------------
+    def _splitDict(self, dictInput, n):
+        keys = list(dictInput.keys())
+        splitKeys = [keys[i: i+n] for i in range(0, len(keys), n)]
+        outputList = []
+        for chunk in splitKeys:
+            newDict = {}
+            for key in chunk:
+                newDict[key] = dictInput[key]
+            outputList.append(newDict)
+        return outputList
+
+    # -------------------------------------------------------------------------
+    # process
+    # -------------------------------------------------------------------------
+    def _process(self, timeDateLocToChl, outputFile):
+        # Get the pixel values for each mission.
+        rowsToWrite = []
+
+        for i, timeDateLoc in enumerate(timeDateLocToChl):
+
+            # print('Processing row: {}/{}'.format(i+1, len(timeDateLocToChl)))
+
+            # ----------------------------------------------------------------
+            # The data returned from self._processTimeDate takes the form of:
+            # { missionName1 :
+            #      {
+            #          (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
+            #          (time2, data2, lat2, long2, Chl-A2) : [pVal1, pVal2]
+            #       }
+            #   missionName2 :
+            #       {
+            #           (time1, data1, lat1, long1, Chl-A1) : [pVal1, pVal2],
+            #       }
+            # }
+            # This data structure needs to be reduced to one key per row with
+            # aggregated values.
+            #
+            # [time1, date1, lat1, long1, Chl-A1,
+            #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
+            # [time2, date2, lat2, long2, Chl-a2,
+            #   Mission1-pVal1, Mission1-pVal2, Mission2-pVal2]
+            # ----------------------------------------------------------------
+            ex = self._processTimeDateLoc(timeDateLoc,
+                                          timeDateLocToChl[timeDateLoc],
+                                          self._missions,
+                                          self._outputDir,
+                                          self._dummyPath,
+                                          noDataValue=self._noData,
+                                          erroredDataValue=self._erroredData)
+            rowsPerTimeDateLoc = []
+
+            for j, (missionKey, missionVals) in enumerate(ex.items()):
+                for k, (rowKey, rowValues) in enumerate(missionVals.items()):
+
+                    # First time seeing these keys, new row.
+                    if j == 0:
+                        newRow = []
+                        rowKeyTuple = tuple(rowKey.split(","))
+                        newRow.extend(list(rowKeyTuple))
+                        newRow.extend(rowValues)
+                        rowsPerTimeDateLoc.append(newRow)
+
+                    # Keys are already present, append data.
+                    else:
+                        rowsPerTimeDateLoc[k].extend(rowValues)
+
+            # Write this timeDate's data rows to the overall rows.
+            rowsToWrite.extend(rowsPerTimeDateLoc)
+
+        # Write the output file.
+        outFileName = os.path.splitext(
+            os.path.basename(self._inputFile.fileName()))
+
+        outFileName = outFileName[0] + \
+            self.RESULT_APPEND_STRING + \
+            outFileName[1]
+
+        outputFile = os.path.join(self._outputDir,
+                                  outFileName)
+
+        # Start writing to CSV
+        with open(outputFile, 'a') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerows(rowsToWrite)
 
     # ------------------------------------------------------------------------
     # processTimeDate
@@ -400,6 +449,7 @@ class NepacProcess(object):
             retrieverLonLat)
 
         dataset, _, retrieverError = retrieverObject.run()
+
         dataSets = missions[mission]
         nepacOutputDict = {}
 
@@ -424,9 +474,16 @@ class NepacProcess(object):
                 # point to look for. Return the indices, and whether the
                 # closest valid location was within a spatial window.
                 # ---
-                xIdx, yIdx = Retriever.geoLocate(
-                    dataset, trueLatLon[0], trueLatLon[1], quiet=True,
-                    error=retrieverError)
+                try:
+                    xIdx, yIdx = Retriever.geoLocate(
+                        dataset, trueLatLon[0], trueLatLon[1], quiet=True,
+                        error=retrieverError)
+                except Exception as e:
+                    errorStr = 'Error geolocating, using no-data value. ' +\
+                        'Error: {}'.format(e)
+                    xIdx = NepacProcess.NO_DATA_IDX
+                    yIdx = NepacProcess.NO_DATA_IDX
+                    warnings.warn(errorStr)
 
             if xIdx == NepacProcess.NO_DATA_IDX and \
                     yIdx == NepacProcess.NO_DATA_IDX:
@@ -440,11 +497,16 @@ class NepacProcess(object):
 
                 # We need to sample pixel via indices.
                 if not retrieverObject.GEOREFERENCED:
-
-                    val = dataset[datasetName].sel(number_of_lines=xIdx,
-                                                   pixels_per_line=yIdx)
-
-                    val = float(val)
+                    try:
+                        val = dataset[datasetName].sel(number_of_lines=xIdx,
+                                                       pixels_per_line=yIdx)
+                        val = float(val)
+                    except Exception as e:
+                        val = float(erroredDataValue)
+                        retrieverError = True
+                        warningStr = 'Error in finding file or opening in' +\
+                            'Xarray. Using no-data value. Error: {}'.format(e)
+                        warnings.warn(warningStr)
 
                     # ---
                     # If any flags were thrown, write out no-data number
@@ -458,12 +520,18 @@ class NepacProcess(object):
 
                 # We need to sample pixel via lat,lon (L3/L4 data).
                 else:
+                    try:
+                        val = dataset[datasetName].sel(lat=trueLatLon[0],
+                                                       lon=trueLatLon[1],
+                                                       method='nearest')
+                        val = float(val)
+                    except Exception as e:
+                        val = float(erroredDataValue)
+                        retrieverError = True
+                        warningStr = 'Error in finding file or opening in' +\
+                            'Xarray. Using no-data value. Error: {}'.format(e)
+                        warnings.warn(warningStr)
 
-                    val = dataset[datasetName].sel(lat=trueLatLon[0],
-                                                   lon=trueLatLon[1],
-                                                   method='nearest')
-
-                    val = float(val)
                     val = float(erroredDataValue) if retrieverError \
                         else val
                     val = float(noDataValue) if math.isnan(val) \
@@ -471,7 +539,8 @@ class NepacProcess(object):
 
                 # Some sensors require a function to be applied to the val.
                 if retrieverObject.SPECIAL_VALUE_FUNCTION:
-                    val = retrieverObject.retrieverValueFunction(val)
+                    val = retrieverObject.retrieverValueFunction(val) if \
+                        not retrieverError else val
 
                 timeDateLocChlKey = (
                     timeDateLoc[0],
@@ -496,3 +565,12 @@ class NepacProcess(object):
         nepacMissionOutput = {}
         nepacMissionOutput[mission] = nepacOutputDict
         return nepacMissionOutput
+
+    # ------------------------------------------------------------------------
+    # removeNCFiles()
+    # ------------------------------------------------------------------------
+    @staticmethod
+    def removeNCFiles():
+        ncFileList = [fv for fv in glob.glob('*.nc')]
+        for ncFile in ncFileList:
+            os.remove(ncFile)

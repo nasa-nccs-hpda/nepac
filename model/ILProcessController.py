@@ -84,7 +84,7 @@ class ILProcessController():
 
             # Retrieve log level - default to 'info'
             _logLevel = app.conf.get(IL_LOGLEVEL)
-            _logLevel = 'info' if _logLevel is None \
+            _logLevel = 'ERROR' if _logLevel is None \
                 else _logLevel
 
             # Start the Celery Workers
