@@ -18,5 +18,5 @@ FROM: ./core-2.1.0.sif
 
     # retrieve nepac source from git repository and open permissions
     mkdir -p /usr/local/nepac
-    git clone --single-branch --branch develop https://github.com/nasa-nccs-hpda/nepac.git /usr/local/nepac
+    git clone --single-branch --branch main https://github.com/nasa-nccs-hpda/nepac.git /usr/local/nepac
     chmod a+rwx -R /usr/local/nepac
