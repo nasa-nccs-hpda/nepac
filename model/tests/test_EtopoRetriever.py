@@ -26,7 +26,7 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         tmpDir = tempfile.gettempdir()
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
+            os.mkdir(tmpDataDir)
         pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'ETOPO1_Bed_g_gmt4.grd')):
             tar = tarfile.open(pathToDummySet)
