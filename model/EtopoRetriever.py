@@ -12,7 +12,6 @@ class EtopoRetriever(Retriever):
     SPECIAL_VALUE_FUNCTION = False
     LAT_LON_INDEXING = False
     GEOREFERENCED = True
-    DATASET_PATHS = 'nepac/model/datasets'
 
     ETOPO1_MISSION_DICTIONARY = {
         'ETOPO1-BED': 'ETOPO1_Bed_g_gmt4.grd',
@@ -47,7 +46,7 @@ class EtopoRetriever(Retriever):
     def run(self):
 
         outputPath = os.path.join(
-            self.DATASET_PATHS,
+            self._dummyPath,
             self.ETOPO1_MISSION_DICTIONARY[self._mission]
         )
 

@@ -27,7 +27,7 @@ class NepacProcessGUI(tk.Frame):
     FILE_BUTTON_TEXT = 'Choose file as input'
     OUTPUT_FOLDER_PATH_DEFAULT = 'NO OUTPUT DIRECTORY SELECTED'
     OUTPUT_FOLDER_BUTTON_TEXT = 'Choose directory as output directory'
-    DUMMY_FOLDER_PATH_DEFAULT = '/usr/local/nepac/model/datasets'
+    DUMMY_FOLDER_PATH_DEFAULT = 'NO DATASET DIRECTORY SELECTED'
     DUMMY_FOLDER_BUTTON_TEXT = 'Choose directory as dummy dataset directory'
     NO_DATA_TEXT = 'No-data value: '
     ERRORED_DATA_TEXT = 'Errored-data value: '
