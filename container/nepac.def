@@ -1,22 +1,50 @@
+#-----------------------------------------------------------------------------------------
+# Build nepac container
+# Source: https://github.com/nasa-nccs-hpda/nepac/blob/main/container/nepac.def
+#-----------------------------------------------------------------------------------------
+# Bootstrap: oras
+# FROM: gitlab.nccs.nasa.gov:5050/cisto-ilab/containers/base/cisto-core-ubuntu:1.0.0
 Bootstrap: localimage
 FROM: ./core.sif
 
+
+%labels
+    cisto_author gtamkin
+    cisto_modified jacaraba, sstrong
+    app_poc cssprad1
+    Version v1.0.0
+
 %help
 ===========================================================================
-	- nepac (extends -> core) – ILAB dependencies:
+	- nepac(extends -> core-ubuntu) – contains nepac dependencies:
 ===========================================================================
 
 %environment
-
-    # set PYTHONPATH for access to nepac code
-    export PYTHONPATH="$PYTHONPATH:/usr/local/nepac"
+    export PYTHONPATH="$PYTHONPATH:/usr/local/ilab"
 
 %post
 
-    # Tkinter, a GUI framework
-    sudo apt-get install -y python3-tk
+    PROJECT_PATH="/usr/local/ilab"
 
-    # retrieve nepac source from git repository and open permissions
-    mkdir -p /usr/local/nepac
-    git clone --single-branch --branch main https://github.com/nasa-nccs-hpda/nepac.git /usr/local/nepac
-    chmod a+rwx -R /usr/local/nepac
+    #-------------------------------------------------------------------------------
+    # System Dependencies
+    #-------------------------------------------------------------------------------
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3-tk tk-dev libgdbm-dev libc6-dev libbz2-dev \
+        libffi-dev zlib1g-dev liblzma-dev libgirepository1.0-dev libcairo2-dev \
+        pkg-config python3-dev gir1.2-gtk-3.0 && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y autoremove && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt
+
+    #-------------------------------------------------------------------------------
+    # NEPAC Git Dependencies
+    #-------------------------------------------------------------------------------
+    mkdir -p ${PROJECT_PATH}
+    git clone --single-branch --branch main https://github.com/nasa-nccs-hpda/nepac.git \
+		${PROJECT_PATH}/nepac
+    chmod a+rwx -R ${PROJECT_PATH}/*
+
+%test
+
+    python -c 'import tkinter; import core; import nepac'
