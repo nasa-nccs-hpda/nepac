@@ -26,7 +26,7 @@ class PosstRetrieverTestCase(unittest.TestCase):
         tmpDir = tempfile.gettempdir()
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
+            os.mkdir(tmpDataDir)
         pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'POSST.nc')):
             tar = tarfile.open(pathToDummySet)

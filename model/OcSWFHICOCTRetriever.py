@@ -171,11 +171,11 @@ class OcSWFHICOCTRetriever(Retriever):
 
             fileURL = ocFileUrl.split('.gov')[1]
             fileName = ocFileUrl.split('getfile/')[1]
-
             request_status = httpdl(self.BASE_URL,
                                     fileURL,
                                     localpath=self._outputDirectory,
                                     uncompress=True)
+                
 
             if not self.catchHTTPError(request_status):
 
