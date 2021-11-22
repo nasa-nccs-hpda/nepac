@@ -9,7 +9,7 @@ FROM: ./core.sif
 %environment
 
     # set PYTHONPATH for access to nepac code
-    export PYTHONPATH="$PYTHONPATH:/usr/local/nepac"
+    export PYTHONPATH="$PYTHONPATH:/usr/local/ilab/nepac"
 
 %post
 
@@ -18,5 +18,5 @@ FROM: ./core.sif
 
     # retrieve nepac source from git repository and open permissions
     mkdir -p /usr/local/nepac
-    git clone --single-branch --branch main https://github.com/nasa-nccs-hpda/nepac.git /usr/local/nepac
-    chmod a+rwx -R /usr/local/nepac
+    git clone --single-branch --branch main https://github.com/nasa-nccs-hpda/nepac.git /usr/local/ilab/nepac
+    chmod a+rwx -R /usr/local/ilab/nepac
