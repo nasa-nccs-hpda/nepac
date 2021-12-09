@@ -111,6 +111,7 @@ class OceanColorRetriever(Retriever):
 
             return self.extractAndMergeDataset(
                 'ERROR',
+                dummyPath=self._dummyPath,
                 removeFile=False,
                 mission=self._mission,
                 error=self._error
