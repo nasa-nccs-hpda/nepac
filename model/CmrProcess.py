@@ -199,11 +199,12 @@ class CmrProcess(object):
             try:
                 requestResultPackage = httpPoolManager.request('GET',
                                                                requestUrl)
-            except Exception as e:
+            except (urllib3.exception.MaxRetryError, Exception) as e:
                 errorStr = 'Caught HTTP exception {}'.format(e)
                 warnings.warn(errorStr)
                 self._error = True
                 return 0, None
+
             try:
                 requestResultData = json.loads(
                     requestResultPackage.data.decode('utf-8'))
