@@ -213,9 +213,11 @@ class Retriever(object):
             return True
         with urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
                                  ca_certs=certifi.where()) as httpPoolManager:
+
             encodedRequest = urlencode(requestList)
             urlToUse = self.BASE_URL if not customURL else customURL
             requestUrl = '{}?{}'.format(urlToUse, encodedRequest)
+
             try:
                 request = httpPoolManager.request('GET',
                                                   requestUrl,
@@ -224,15 +226,23 @@ class Retriever(object):
                 errorStr = 'Encountered HTTP download exception: {}'.format(e)
                 warnings.warn(errorStr)
                 return True
+
             if self.catchHTTPError(int(request.status)):
                 request.release_conn()
                 return True
-            with open(outputPath, 'wb') as outputFile:
-                while True:
-                    data = request.read(self.BUFFER_SIZE)
-                    if not data:
-                        break
-                    outputFile.write(data)
+
+            try:
+                with open(outputPath, 'wb') as outputFile:
+                    while True:
+                        data = request.read(self.BUFFER_SIZE)
+                        if not data:
+                            break
+                        outputFile.write(data)
+            except Exception as e:
+                errorStr = 'Error unloading HTTP response: {}'.format(e)
+                warnings.warn(errorStr)
+                return True
+
             request.release_conn()
             return self._error
 
