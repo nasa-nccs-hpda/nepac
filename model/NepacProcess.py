@@ -171,7 +171,6 @@ class NepacProcess(object):
     def run(self):
         # Read the input file and aggregate by mission.
         timeDateLocToChl = self._readInputFile()
-
         # Write the output file.
         outFileName = os.path.splitext(
             os.path.basename(self._inputFile.fileName()))
@@ -213,14 +212,12 @@ class NepacProcess(object):
     def _readInputFile(self):
 
         timeDateLocToChl = {}
-
         with open(self._inputFile.fileName()) as csvFile:
 
             reader = csv.DictReader(csvFile)
             next(reader, None)  # Skip the line telling the number of lines.
-
+            duplicateRowsCounter = 0
             for row in reader:
-
                 # ---
                 # Aggregate the rows by time, date, and location. This
                 # combination determines a mission file name through a CMR
@@ -242,13 +239,17 @@ class NepacProcess(object):
                                   date,
                                   lat,
                                   row['Lon'].strip())
+                
+                for key in timeDateLocToChl.keys():
+                    if timeDateLocKey == key:
+                        duplicateRowsCounter += 1
 
                 if timeDateLocKey not in timeDateLocToChl:
                     timeDateLocToChl[timeDateLocKey] = []
 
                 timeDateLocToChl[timeDateLocKey]. \
                     append((row['Chla_all'].strip()))
-
+        print('Found {} duplicate rows.'.format(duplicateRowsCounter))
         return timeDateLocToChl
 
     # -------------------------------------------------------------------------

@@ -195,18 +195,26 @@ class CmrProcess(object):
                                  ca_certs=certifi.where()) as httpPoolManager:
             encodedParameters = urlencode(requestDictionary, doseq=True)
             requestUrl = self.CMR_BASE_URL + encodedParameters
+
             try:
                 requestResultPackage = httpPoolManager.request('GET',
                                                                requestUrl)
-            except urllib3.exceptions.MaxRetryError:
+            except Exception as e:
+                errorStr = 'Caught HTTP exception {}'.format(e)
+                warnings.warn(errorStr)
+                self._error = True
+                return 0, None
+            try:
+                requestResultData = json.loads(
+                    requestResultPackage.data.decode('utf-8'))
+                status = int(requestResultPackage.status)
+            except Exception as e:
+                errorStr = 'Caught JSON unloading exception: {}'.format(e)
+                warnings.warn(errorStr)
                 self._error = True
                 return 0, None
 
-            requestResultData = json.loads(
-                requestResultPackage.data.decode('utf-8'))
-            status = int(requestResultPackage.status)
-
-            if not status == 400:
+            if not status >= 400:
                 totalHits = len(requestResultData['items'])
                 return totalHits, requestResultData
 
