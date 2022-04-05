@@ -11,7 +11,7 @@ from nepac.model.OcSWFHICOCTRetriever import OcSWFHICOCTRetriever
 # class OcSWFHICORetriever
 #
 # singularity shell -B /att
-# /att/nobackup/iluser/containers/ilab-nepac-2.0.0.simg
+# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.simg
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -27,7 +27,8 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        pathToDummySet = \
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'SEAWIFS.nc')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
@@ -72,7 +73,8 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        pathToDummySet = \
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'OCTS.nc')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
@@ -96,7 +98,8 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
                                   invalidLatLocation)
         self.assertTrue(rt._error)
 
-        OcSWFHICOCTRetriever('SeaWiFS', validDateTime, tmpDataDir, validLocation)
+        OcSWFHICOCTRetriever(
+            'SeaWiFS', validDateTime, tmpDataDir, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
@@ -106,7 +109,8 @@ class OsSWFHICOCTRetriever(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        pathToDummySet = \
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'HICO.nc')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
