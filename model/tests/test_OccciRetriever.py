@@ -11,7 +11,7 @@ from nepac.model.OccciRetriever import OccciRetriever
 # class OccciRetrieverTestCase
 #
 # singularity shell -B /att
-# /att/nobackup/iluser/containers/ilab-nepac-2.0.0.simg
+# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.simg
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -27,7 +27,8 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        pathToDummySet = \
+            '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
@@ -38,9 +39,11 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            OccciRetriever('invalidMission', validDateTime, tmpDataDir, validLocation)
+            OccciRetriever('invalidMission', validDateTime, tmpDataDir,
+                           validLocation)
 
-        rt = OccciRetriever('OC-CCI', invalidDateTime, tmpDataDir, validLocation)
+        rt = OccciRetriever('OC-CCI', invalidDateTime, tmpDataDir,
+                            validLocation)
         self.assertTrue(rt._error)
         # Test valid everything.
         OccciRetriever('OC-CCI', validDateTime, tmpDataDir, validLocation)
@@ -66,7 +69,8 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        pathToDummySet = \
+            '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
@@ -100,7 +104,8 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
+        pathToDummySet = \
+            '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
