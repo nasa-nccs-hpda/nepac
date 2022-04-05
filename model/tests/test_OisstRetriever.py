@@ -29,7 +29,8 @@ class OisstRetrieverTestCase(unittest.TestCase):
             os.mkdir(tmpDataDir)
         if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
             pathToDummySet = \
-                '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
+                '/adapt/nobackup/projects/ilab/' + \
+                'data/NEPAC/nepac_datasets.tar.gz'
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2020, 1, 1)
@@ -70,7 +71,8 @@ class OisstRetrieverTestCase(unittest.TestCase):
             tmpDataDir = os.mkdir(tmpDataDir)
         if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
             pathToDummySet = \
-                '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
+                '/adapt/nobackup/projects/ilab/' + \
+                'data/NEPAC/nepac_datasets.tar.gz'
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
@@ -104,7 +106,7 @@ class OisstRetrieverTestCase(unittest.TestCase):
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
         pathToDummySet = \
-            '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)

@@ -28,7 +28,7 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         if not os.path.exists(tmpDataDir):
             os.mkdir(tmpDataDir)
         pathToDummySet = \
-            '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir,
                                            'ETOPO1_Bed_g_gmt4.grd')):
             tar = tarfile.open(pathToDummySet)
@@ -71,7 +71,7 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
         pathToDummySet = \
-            '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir,
                                            'ETOPO1_Bed_g_gmt4.grd')):
             tar = tarfile.open(pathToDummySet)
@@ -107,7 +107,7 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
         pathToDummySet = \
-            '/adapt/nobackup/people/cssprad1/nepac_datasets.tar.gz'
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
         if not os.path.exists(os.path.join(tmpDataDir,
                                            'ETOPO1_Bed_g_gmt4.grd')):
             tar = tarfile.open(pathToDummySet)
