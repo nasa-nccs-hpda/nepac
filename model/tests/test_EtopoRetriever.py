@@ -11,7 +11,7 @@ from nepac.model.EtopoRetriever import EtopoRetriever
 # class EtopoRetrieverTestCase
 #
 # singularity shell -B /att
-# /att/nobackup/iluser/containers/ilab-nepac-2.0.0.simg
+# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.simg
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -27,8 +27,10 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'ETOPO1_Bed_g_gmt4.grd')):
+        pathToDummySet = \
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir,
+                                           'ETOPO1_Bed_g_gmt4.grd')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2004, 1, 1)
@@ -38,9 +40,11 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            EtopoRetriever('invalidMission', validDateTime, tmpDataDir, validLocation)
+            EtopoRetriever('invalidMission', validDateTime,
+                           tmpDataDir, validLocation)
 
-        rt = EtopoRetriever('ETOPO1-BED', invalidDateTime, tmpDataDir, validLocation)
+        rt = EtopoRetriever('ETOPO1-BED', invalidDateTime,
+                            tmpDataDir, validLocation)
         self.assertTrue(rt._error)
         # Test valid everything.
         EtopoRetriever('ETOPO1-ICE', validDateTime, tmpDataDir, validLocation)
@@ -66,8 +70,10 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'ETOPO1_Bed_g_gmt4.grd')):
+        pathToDummySet = \
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir,
+                                           'ETOPO1_Bed_g_gmt4.grd')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
@@ -100,8 +106,10 @@ class EtopoRetrieverTestCase(unittest.TestCase):
         tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
         if not os.path.exists(tmpDataDir):
             tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = '/att/nobackup/cssprad1/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'ETOPO1_Bed_g_gmt4.grd')):
+        pathToDummySet = \
+            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
+        if not os.path.exists(os.path.join(tmpDataDir,
+                                           'ETOPO1_Bed_g_gmt4.grd')):
             tar = tarfile.open(pathToDummySet)
             tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
