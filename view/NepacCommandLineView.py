@@ -1,9 +1,11 @@
 import argparse
 import sys
 import os
-from nepac.model.ILProcessController import ILProcessController
-from nepac.model.NepacProcessCelery import NepacProcessCelery
+
+from core.model.ILProcessController import ILProcessController
+
 from nepac.model.NepacProcess import NepacProcess
+from nepac.model.NepacProcessCelery import NepacProcessCelery
 
 
 # -----------------------------------------------------------------------------
@@ -103,7 +105,8 @@ def main():
         missionDataSetDict[mission].append(dataset)
 
     if args.celery:
-        with ILProcessController() as processController:
+        with ILProcessController('nepac.model.CeleryConfiguration') \
+                as processController:
             try:
                 np = NepacProcessCelery(args.f,
                                         missionDataSetDict,

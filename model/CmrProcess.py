@@ -259,9 +259,17 @@ class CmrProcess(object):
                 spatialExtent = hit['umm']['SpatialExten' +
                                            't']['HorizontalSpatialDom' +
                                                 'ain']['Geometry']
-                withinPadding = self._checkDistanceFromPadding(
-                    spatialExtent['BoundingRectangles'][0])
-
+                try:
+                    withinPadding = self._checkDistanceFromPadding(
+                        spatialExtent['BoundingRectangles'][0])
+                except KeyError:
+                    gPolygonsBoundsList = \
+                        spatialExtent['GPolygons'][0]['Boundary']['Points']
+                    boundingBox = \
+                        self._gPolygonsToBoundingBox(gPolygonsBoundsList)
+                    withinPadding = self._checkDistanceFromPadding(
+                        boundingBox
+                    )
             else:
                 spatialExtent = 'None'
                 withinPadding = True
@@ -309,6 +317,22 @@ class CmrProcess(object):
                     '%Y-%m-%dT%H:%M:%SZ')
             temporalDiff = abs(temporalDiffDatetime.total_seconds())
         return temporalDiff
+
+    # -------------------------------------------------------------------------
+    # _gPolygonsToBoundingBox
+    #
+    # Due to r2022 reprocessing, some metadata will no longer use bounding box.
+    # We must calculate bounding box from list of coords of polygon.
+    # -------------------------------------------------------------------------
+    def _gPolygonsToBoundingBox(self, gPolygonsBoundsList):
+        lats = [pair['Latitude'] for pair in gPolygonsBoundsList]
+        lons = [pair['Longitude'] for pair in gPolygonsBoundsList]
+        boundingBoxDict = {}
+        boundingBoxDict['EastBoundingCoordinate'] = max(lons)
+        boundingBoxDict['WestBoundingCoordinate'] = min(lons)
+        boundingBoxDict['NorthBoundingCoordinate'] = max(lats)
+        boundingBoxDict['SouthBoundingCoordinate'] = min(lats)
+        return boundingBoxDict
 
     # -------------------------------------------------------------------------
     # _checkDistanceFromPadding()
