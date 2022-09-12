@@ -77,12 +77,32 @@ class OceanColorRetriever(Retriever):
 
         fileURL = fileURL.split('.gov/cmr')[1]
         fileURL = '/ob'+fileURL
+        joiner = '?appkey='
+        try:
+            appkey = os.environ['NEPAC_APPKEY']
+        except Exception:
+            msg = 'No APPKEY for OB.DAAC download'
+            raise RuntimeError(msg)
+        fileURL = '{}{}{}'.format(fileURL, joiner, appkey)
 
         # Download the data set.
-        request_status = httpdl(OceanColorRetriever.BASE_URL,
-                                fileURL,
-                                localpath=self._outputDirectory,
-                                uncompress=True)
+        try:
+            request_status = httpdl(OceanColorRetriever.BASE_URL,
+                                    fileURL,
+                                    localpath=self._outputDirectory,
+                                    uncompress=True)
+        except Exception:
+            msg = 'Client or server error' + '. ' + fileName
+            self._error = True
+            warnings.warn(msg)
+
+            return self.extractAndMergeDataset(
+                'ERROR',
+                dummyPath=self._dummyPath,
+                removeFile=False,
+                mission=self._mission,
+                error=self._error
+            )
 
         # File was retrieved, or file was already present.
         if request_status == 0 or request_status == 200 \
