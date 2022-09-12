@@ -192,7 +192,10 @@ class CmrProcess(object):
     # -------------------------------------------------------------------------
     def _sendRequest(self, requestDictionary):
         with urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
-                                 ca_certs=certifi.where()) as httpPoolManager:
+                                 ca_certs=certifi.where(),
+                                 retries=urllib3.Retry(5, redirect=2),
+                                 timeout=urllib3.Timeout(30)) \
+                as httpPoolManager:
             encodedParameters = urlencode(requestDictionary, doseq=True)
             requestUrl = self.CMR_BASE_URL + encodedParameters
 

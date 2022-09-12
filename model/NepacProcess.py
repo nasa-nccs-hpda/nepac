@@ -6,6 +6,8 @@ import math
 import os
 import warnings
 
+import pdb
+
 from core.model.BaseFile import BaseFile
 from nepac.model.Retriever import Retriever
 from nepac.model.BosswRetriever import BosswRetriever
@@ -80,8 +82,8 @@ class NepacProcess(object):
         'MODIS-Aqua': OceanColorRetriever,
         'CZCS': OceanColorRetriever,
         'GOCI': OceanColorRetriever,
-        'HICO': OcSWFHICOCTRetriever,
-        'OCTS': OcSWFHICOCTRetriever,
+        'HICO': OceanColorRetriever,
+        'OCTS': OceanColorRetriever,
         'SeaWiFS': OcSWFHICOCTRetriever,
         'MODIS-Terra': OceanColorRetriever,
         'VIIRS-SNPP': OceanColorRetriever,
@@ -95,7 +97,7 @@ class NepacProcess(object):
     }
 
     # OB DAAC sensors which are not populated in NASA Earth's CMR.
-    NON_CMR_SENSORS = ['OCTS', 'SeaWiFS', 'HICO']
+    NON_CMR_SENSORS = ['SeaWiFS']
 
     # Placeholder index variable if no valid location was found.
     NO_DATA_IDX = -1
