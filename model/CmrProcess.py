@@ -192,7 +192,10 @@ class CmrProcess(object):
     # -------------------------------------------------------------------------
     def _sendRequest(self, requestDictionary):
         with urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
-                                 ca_certs=certifi.where()) as httpPoolManager:
+                                 ca_certs=certifi.where(),
+                                 retries=urllib3.Retry(5, redirect=2),
+                                 timeout=urllib3.Timeout(30)) \
+                as httpPoolManager:
             encodedParameters = urlencode(requestDictionary, doseq=True)
             requestUrl = self.CMR_BASE_URL + encodedParameters
 
@@ -259,9 +262,17 @@ class CmrProcess(object):
                 spatialExtent = hit['umm']['SpatialExten' +
                                            't']['HorizontalSpatialDom' +
                                                 'ain']['Geometry']
-                withinPadding = self._checkDistanceFromPadding(
-                    spatialExtent['BoundingRectangles'][0])
-
+                try:
+                    withinPadding = self._checkDistanceFromPadding(
+                        spatialExtent['BoundingRectangles'][0])
+                except KeyError:
+                    gPolygonsBoundsList = \
+                        spatialExtent['GPolygons'][0]['Boundary']['Points']
+                    boundingBox = \
+                        self._gPolygonsToBoundingBox(gPolygonsBoundsList)
+                    withinPadding = self._checkDistanceFromPadding(
+                        boundingBox
+                    )
             else:
                 spatialExtent = 'None'
                 withinPadding = True
@@ -309,6 +320,22 @@ class CmrProcess(object):
                     '%Y-%m-%dT%H:%M:%SZ')
             temporalDiff = abs(temporalDiffDatetime.total_seconds())
         return temporalDiff
+
+    # -------------------------------------------------------------------------
+    # _gPolygonsToBoundingBox
+    #
+    # Due to r2022 reprocessing, some metadata will no longer use bounding box.
+    # We must calculate bounding box from list of coords of polygon.
+    # -------------------------------------------------------------------------
+    def _gPolygonsToBoundingBox(self, gPolygonsBoundsList):
+        lats = [pair['Latitude'] for pair in gPolygonsBoundsList]
+        lons = [pair['Longitude'] for pair in gPolygonsBoundsList]
+        boundingBoxDict = {}
+        boundingBoxDict['EastBoundingCoordinate'] = max(lons)
+        boundingBoxDict['WestBoundingCoordinate'] = min(lons)
+        boundingBoxDict['NorthBoundingCoordinate'] = max(lats)
+        boundingBoxDict['SouthBoundingCoordinate'] = min(lats)
+        return boundingBoxDict
 
     # -------------------------------------------------------------------------
     # _checkDistanceFromPadding()

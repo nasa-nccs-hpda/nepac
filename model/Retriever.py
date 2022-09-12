@@ -212,7 +212,10 @@ class Retriever(object):
         if self._error:
             return True
         with urllib3.PoolManager(cert_reqs='CERT_REQUIRED',
-                                 ca_certs=certifi.where()) as httpPoolManager:
+                                 ca_certs=certifi.where(),
+                                 retries=urllib3.Retry(5, redirect=2),
+                                 timeout=urllib3.Timeout(30)) \
+                as httpPoolManager:
 
             encodedRequest = urlencode(requestList)
             urlToUse = self.BASE_URL if not customURL else customURL

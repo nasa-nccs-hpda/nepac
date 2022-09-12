@@ -3,7 +3,7 @@ import os
 
 from celery import group, chord
 
-from core.model.CeleryConfiguration import app
+from nepac.model.CeleryConfiguration import app
 from nepac.model.NepacProcess import NepacProcess
 
 
