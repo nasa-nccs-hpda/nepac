@@ -25,7 +25,8 @@ class OcSWFHICOCTRetriever(Retriever):
     OBDAAC_GETFILE_UR = '/ob/getfile/'
 
     # Regex pattern to filter out valid OB DAAC L2 files from HTTP responses.
-    FILE_PATTERN = "[0-9]*[0-9a-z]\.[0-9A-Z]*[_][0-9A-Z]*[_][O][C]\.[a-z]*"
+    FILE_PATTERN = \
+        "[0-9]*[0-9a-z]\.[0-9A-Z]*[_][0-9A-Z]*[_][O][C]\.[a-z]*"
 
     # Types of files we do not want to search through.
     INVALID_STR = {
@@ -171,11 +172,25 @@ class OcSWFHICOCTRetriever(Retriever):
 
             fileURL = ocFileUrl.split('.gov')[1]
             fileName = ocFileUrl.split('getfile/')[1]
-            request_status = httpdl(self.BASE_URL,
-                                    fileURL,
-                                    localpath=self._outputDirectory,
-                                    uncompress=True)
-                
+            try:
+                request_status = httpdl(self.BASE_URL,
+                                        fileURL,
+                                        localpath=self._outputDirectory,
+                                        uncompress=True)
+            except Exception:
+                msg = 'Client or server error: ' + fileName
+                warnings.warn(msg)
+                self._error = True
+
+                dataset, _, self._error = self.extractAndMergeDataset(
+                    fileList[0],
+                    self._dummyPath,
+                    removeFile=False,
+                    mission=self._mission,
+                    error=error
+                )
+
+                return dataset, self.NO_DATA_IDX, self.NO_DATA_IDX
 
             if not self.catchHTTPError(request_status):
 
