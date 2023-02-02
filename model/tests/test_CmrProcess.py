@@ -7,8 +7,8 @@ from nepac.model.CmrProcess import CmrProcess
 # -----------------------------------------------------------------------------
 # class CmrProcessTestCase
 #
-# singularity shell -B /att
-# /att/nobackup/iluser/containers/ilab-nepac-2.0.0.simg
+# singularity shell -B /explore,/panfs,/tmp
+# /explore/nobackup/people/iluser/ilab_containers/nepac-2.2.0.sif
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
