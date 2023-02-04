@@ -66,7 +66,8 @@ def main():
 
     parser.add_argument('-d',
                         type=str,
-                        help='Path to dummy datasets')
+                        default='/usr/local/ilab/nepac_datasets',
+                        help='Path to on disk datasets')
 
     args = parser.parse_args()
 

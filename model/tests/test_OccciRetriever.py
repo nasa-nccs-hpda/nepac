@@ -1,6 +1,4 @@
 import datetime
-import os
-import tarfile
 import tempfile
 import unittest
 
@@ -10,8 +8,8 @@ from nepac.model.OccciRetriever import OccciRetriever
 # -----------------------------------------------------------------------------
 # class OccciRetrieverTestCase
 #
-# singularity shell -B /att
-# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.simg
+# singularity shell -B /explore,/panfs,/tmp
+# /explore/nobackup/people/iluser/ilab_containers/nepac-2.2.0.sif
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -19,19 +17,12 @@ from nepac.model.OccciRetriever import OccciRetriever
 # -----------------------------------------------------------------------------
 class OccciColorRetrieverTestCase(unittest.TestCase):
 
+    NEPAC_DISK_DATASETS = '/usr/local/ilab/nepac_datasets'
+
     # -------------------------------------------------------------------------
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2004, 1, 1)
         invalidDateTime = datetime.datetime(1970, 1, 1)
         validLocation = ('-76.51005', '39.07851')
@@ -39,14 +30,17 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            OccciRetriever('invalidMission', validDateTime, tmpDataDir,
+            OccciRetriever('invalidMission', validDateTime,
+                           self.NEPAC_DISK_DATASETS,
                            validLocation)
 
-        rt = OccciRetriever('OC-CCI', invalidDateTime, tmpDataDir,
+        rt = OccciRetriever('OC-CCI', invalidDateTime,
+                            self.NEPAC_DISK_DATASETS,
                             validLocation)
         self.assertTrue(rt._error)
         # Test valid everything.
-        OccciRetriever('OC-CCI', validDateTime, tmpDataDir, validLocation)
+        OccciRetriever('OC-CCI', validDateTime,
+                       self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -65,15 +59,6 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
                                           month=12,
                                           day=11,
@@ -84,31 +69,23 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
 
         rt = OccciRetriever('OC-CCI',
                             validDateTime,
-                            tmpDataDir,
+                            self.NEPAC_DISK_DATASETS,
                             invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = OccciRetriever('OC-CCI',
                             validDateTime,
-                            tmpDataDir,
+                            self.NEPAC_DISK_DATASETS,
                             invalidLatLocation)
         self.assertTrue(rt._error)
 
-        OccciRetriever('OC-CCI', validDateTime, tmpDataDir, validLocation)
+        OccciRetriever('OC-CCI', validDateTime,
+                       self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'OCCCI.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # ---
@@ -124,7 +101,7 @@ class OccciColorRetrieverTestCase(unittest.TestCase):
 
         occciOCR = OccciRetriever('OC-CCI',
                                   validOccciDt,
-                                  tmpDataDir,
+                                  self.NEPAC_DISK_DATASETS,
                                   validOccciLoc,
                                   outputDirectory=tmp_directory)
         occciOCR.run()

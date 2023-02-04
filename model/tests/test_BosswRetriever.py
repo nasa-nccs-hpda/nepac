@@ -1,6 +1,4 @@
 import datetime
-import os
-import tarfile
 import tempfile
 import unittest
 
@@ -10,8 +8,8 @@ from nepac.model.BosswRetriever import BosswRetriever
 # -----------------------------------------------------------------------------
 # class OceanColorRetrieverTestCase
 #
-# singularity shell -B /att
-# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.sif
+# singularity shell -B /explore,/panfs,/tmp
+# /explore/nobackup/people/iluser/ilab_containers/nepac-2.2.0.sif
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -19,19 +17,12 @@ from nepac.model.BosswRetriever import BosswRetriever
 # -----------------------------------------------------------------------------
 class OceanColorRetrieverTestCase(unittest.TestCase):
 
+    NEPAC_DISK_DATASETS = '/usr/local/ilab/nepac_datasets'
+
     # -------------------------------------------------------------------------
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/explore/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2010, 1, 1)
         invalidDateTime = datetime.date.today()
         validLocation = ('-76.51005', '39.07851')
@@ -40,14 +31,16 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
             BosswRetriever(
-                'invalidMission', validDateTime, tmpDataDir, validLocation)
+                'invalidMission', validDateTime,
+                self.NEPAC_DISK_DATASETS, validLocation)
 
         rt = BosswRetriever('BO-SSW', invalidDateTime,
-                            tmpDataDir, validLocation)
+                            self.NEPAC_DISK_DATASETS, validLocation)
         self.assertTrue(rt._error)
 
         # Test valid everything.
-        BosswRetriever('BO-SSW', validDateTime, tmpDataDir, validLocation)
+        BosswRetriever('BO-SSW', validDateTime,
+                       self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -66,15 +59,6 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/explore/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2010,
                                           month=12,
                                           day=11,
@@ -85,31 +69,23 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         rt = BosswRetriever('BO-SSW',
                             validDateTime,
-                            tmpDataDir,
+                            self.NEPAC_DISK_DATASETS,
                             invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = BosswRetriever('BO-SSW',
                             validDateTime,
-                            tmpDataDir,
+                            self.NEPAC_DISK_DATASETS,
                             invalidLatLocation)
         self.assertTrue(rt._error)
 
-        BosswRetriever('BO-SSW', validDateTime, tmpDataDir, validLocation)
+        BosswRetriever('BO-SSW', validDateTime,
+                       self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/explore/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # ---
@@ -125,7 +101,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         bosswR = BosswRetriever('BO-SSW',
                                 validBosswDt,
-                                tmpDataDir,
+                                self.NEPAC_DISK_DATASETS,
                                 validBosswLoc,
                                 outputDirectory=tmp_directory)
         bosswR.run()

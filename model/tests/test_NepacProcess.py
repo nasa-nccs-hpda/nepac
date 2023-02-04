@@ -1,6 +1,4 @@
 import os
-import tarfile
-import tempfile
 import unittest
 
 from nepac.model.NepacProcess import NepacProcess
@@ -9,14 +7,16 @@ from nepac.model.NepacProcess import NepacProcess
 # -----------------------------------------------------------------------------
 # class NepacProcessTestCase
 #
-# singularity shell -B /att \
-# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.simg
+# singularity shell -B /explore,/panfs,/tmp
+# /explore/nobackup/people/iluser/ilab_containers/nepac-2.2.0.sif
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/core:`pwd`/nepac
 # python -m unittest discover model/tests/
 # python -m unittest nepac.model.tests.test_NepacProcess
 # -----------------------------------------------------------------------------
 class NepacProcessTestCase(unittest.TestCase):
+
+    NEPAC_DISK_DATASETS = '/usr/local/ilab/nepac_datasets'
 
     NO_DATA = -9999
     ERRORED_DATA = -9998
@@ -49,22 +49,13 @@ class NepacProcessTestCase(unittest.TestCase):
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         # Input file does not exist.
         with self.assertRaisesRegex(RuntimeError, '.*does not exist.*'):
 
             NepacProcess('bogusFile',
                          None,
                          None,
-                         tmpDataDir,
+                         self.NEPAC_DISK_DATASETS,
                          NepacProcessTestCase.NO_DATA,
                          NepacProcessTestCase.ERRORED_DATA)
 
@@ -74,7 +65,7 @@ class NepacProcessTestCase(unittest.TestCase):
             NepacProcess(NepacProcessTestCase.IN_FILE1,
                          None,
                          '.',
-                         tmpDataDir,
+                         self.NEPAC_DISK_DATASETS,
                          NepacProcessTestCase.NO_DATA,
                          NepacProcessTestCase.ERRORED_DATA)
 
@@ -84,7 +75,7 @@ class NepacProcessTestCase(unittest.TestCase):
             NepacProcess(NepacProcessTestCase.IN_FILE1,
                          NepacProcessTestCase.MISSION_DICT1,
                          None,
-                         tmpDataDir,
+                         self.NEPAC_DISK_DATASETS,
                          NepacProcessTestCase.NO_DATA,
                          NepacProcessTestCase.ERRORED_DATA)
 
@@ -93,7 +84,7 @@ class NepacProcessTestCase(unittest.TestCase):
             NepacProcess(NepacProcessTestCase.IN_FILE1,
                          NepacProcessTestCase.BAD_MISSION_DICT,
                          '.',
-                         tmpDataDir,
+                         self.NEPAC_DISK_DATASETS,
                          NepacProcessTestCase.NO_DATA,
                          NepacProcessTestCase.ERRORED_DATA)
 
@@ -101,14 +92,14 @@ class NepacProcessTestCase(unittest.TestCase):
         NepacProcess(NepacProcessTestCase.IN_FILE1,
                      NepacProcessTestCase.MISSION_DICT1,
                      '.',
-                     tmpDataDir,
+                     self.NEPAC_DISK_DATASETS,
                      NepacProcessTestCase.NO_DATA,
                      NepacProcessTestCase.ERRORED_DATA)
 
         NepacProcess(NepacProcessTestCase.IN_FILE2,
                      NepacProcessTestCase.MISSION_DICT2,
                      '.',
-                     tmpDataDir,
+                     self.NEPAC_DISK_DATASETS,
                      NepacProcessTestCase.NO_DATA,
                      NepacProcessTestCase.ERRORED_DATA)
 
@@ -116,20 +107,11 @@ class NepacProcessTestCase(unittest.TestCase):
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'BOSSW.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         # Valid everything
         np1 = NepacProcess(NepacProcessTestCase.IN_FILE1,
                            NepacProcessTestCase.MISSION_DICT1,
                            '.',
-                           tmpDataDir,
+                           self.NEPAC_DISK_DATASETS,
                            NepacProcessTestCase.NO_DATA,
                            NepacProcessTestCase.ERRORED_DATA)
         np1.run()
@@ -137,7 +119,7 @@ class NepacProcessTestCase(unittest.TestCase):
         np2 = NepacProcess(NepacProcessTestCase.IN_FILE2,
                            NepacProcessTestCase.MISSION_DICT2,
                            '.',
-                           tmpDataDir,
+                           self.NEPAC_DISK_DATASETS,
                            NepacProcessTestCase.NO_DATA,
                            NepacProcessTestCase.ERRORED_DATA)
         np2.run()

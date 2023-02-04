@@ -2,21 +2,30 @@
 # Build nepac container
 # Source: https://github.com/nasa-nccs-hpda/nepac/blob/main/container/nepac.def
 #-----------------------------------------------------------------------------------------
-# Bootstrap: oras
-# FROM: gitlab.nccs.nasa.gov:5050/cisto-ilab/containers/base/cisto-core-ubuntu:1.0.0
-Bootstrap: localimage
-FROM: ./core.sif
+Bootstrap: oras
+#FROM: gitlab.nccs.nasa.gov:5050/cisto-ilab/containers/ilab-base:1.0.0
+#FROM: gitlab.nccs.nasa.gov:5050/cisto-ilab/containers/ilab-base:gdal-3.3.3
+#Testing the ilab-base:gdal3.3.3-dev 
+#FROM: gitlab.nccs.nasa.gov:5050/cisto-ilab/containers/ilab-base:gdal-3.3.3-v2
+FROM: gitlab.nccs.nasa.gov:5050/cisto-ilab/containers/ilab-base:gdal-3.3.3-v4
 
 
 %labels
     cisto_author gtamkin
     cisto_modified jacaraba, sstrong
     app_poc cssprad1
-    Version v1.0.0
+    Version v2.2.0
 
 %help
 ===========================================================================
 	- nepac(extends -> core-ubuntu) – contains nepac dependencies:
+    - 12/9/21  Updated to 1.0.1 for Calebs hotfix
+    - 12/17/21 Updated to 1.0.2 for Calebs hotfix 2
+    - 12/20/21 Updated to 2.0.0. Contains above hotfixes and also nepac now (extends -> ilab-base:gdal-3.3.3) Mark requests that all application containers now contain ilab-base-gdal-3.3.3 due to issues with newer versions of gdal. 
+    - 4/5/22   Updated to 3.0.0. Contains hotfixes that changed all broken /att/nobackup paths to current /adapt/nobackup paths
+    - 5/5/22   Updated to 3.0.1. Includes the latest ilab-base_gdal-3.3.3-v2 which contains redis startup code
+    - 9/13/22  Correcting version numbering to 2.1.0 - Included in this release is: 1-Ocean biology redefined the way they label geospacial bounds so Caleb modified code to handle that. 2-Added support for HTTP timeouts and retries in order to accommodate unreliable DAAC servers. 3-Updated celery and redis use on the application level to fit with new standards in core and ilab base container.
+    - 10/4/22 v2.2.0 Updated to include new ilab-base-gdal-3.3.3-v5.sif. The new ilab-base version 5 fixes broken links that existed after explore path migration.
 ===========================================================================
 
 %environment
@@ -41,9 +50,19 @@ FROM: ./core.sif
     # NEPAC Git Dependencies
     #-------------------------------------------------------------------------------
     mkdir -p ${PROJECT_PATH}
+    #RECOMMENDED LOCATION - CURRENTLY INCLUDED IN CORE (*note moving away from core container)
+    git clone --single-branch --branch master https://github.com/nasa-nccs-hpda/core.git \
+		${PROJECT_PATH}/core
     git clone --single-branch --branch main https://github.com/nasa-nccs-hpda/nepac.git \
 		${PROJECT_PATH}/nepac
     chmod a+rwx -R ${PROJECT_PATH}/*
+
+    #-------------------------------------------------------------------------------
+    # NEPAC Dataset
+    #-------------------------------------------------------------------------------
+    mkdir -p ${PROJECT_PATH}/nepac_datasets; cd ${PROJECT_PATH}/nepac_datasets;
+    wget --quiet ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/nepac/2.1.0/nepac_datasets.tar.gz;
+    tar -zxvf nepac_datasets.tar.gz && rm nepac_datasets.tar.gz;
 
 %test
 
