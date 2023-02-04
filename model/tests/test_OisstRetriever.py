@@ -1,7 +1,5 @@
-import os
 import datetime
 import unittest
-import tarfile
 import tempfile
 
 from nepac.model.OisstRetriever import OisstRetriever
@@ -10,8 +8,8 @@ from nepac.model.OisstRetriever import OisstRetriever
 # -----------------------------------------------------------------------------
 # class OisstRetrieverTestCase
 #
-# singularity shell -B /att
-# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.simg
+# singularity shell -B /explore,/panfs,/tmp
+# /explore/nobackup/people/iluser/ilab_containers/nepac-2.2.0.sif
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -19,20 +17,12 @@ from nepac.model.OisstRetriever import OisstRetriever
 # -----------------------------------------------------------------------------
 class OisstRetrieverTestCase(unittest.TestCase):
 
+    NEPAC_DISK_DATASETS = '/usr/local/ilab/nepac_datasets'
+
     # -------------------------------------------------------------------------
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            os.mkdir(tmpDataDir)
-        if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
-            pathToDummySet = \
-                '/adapt/nobackup/projects/ilab/' + \
-                'data/NEPAC/nepac_datasets.tar.gz'
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2020, 1, 1)
         invalidDateTime = datetime.datetime(1970, 1, 1)
         validLocation = ('-76.51005', '39.07851')
@@ -40,13 +30,15 @@ class OisstRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            OisstRetriever('invalid', validDateTime, tmpDataDir, validLocation)
+            OisstRetriever('invalid', validDateTime,
+                           self.NEPAC_DISK_DATASETS, validLocation)
 
         rt = OisstRetriever(
-            'OI-SST', invalidDateTime, tmpDataDir, validLocation)
+            'OI-SST', invalidDateTime, self.NEPAC_DISK_DATASETS, validLocation)
         self.assertTrue(rt._error)
         # Test valid everything.
-        OisstRetriever('OI-SST', validDateTime, tmpDataDir, validLocation)
+        OisstRetriever('OI-SST', validDateTime,
+                       self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -65,16 +57,6 @@ class OisstRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
-            pathToDummySet = \
-                '/adapt/nobackup/projects/ilab/' + \
-                'data/NEPAC/nepac_datasets.tar.gz'
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
                                           month=12,
                                           day=11,
@@ -85,31 +67,23 @@ class OisstRetrieverTestCase(unittest.TestCase):
 
         rt = OisstRetriever('OI-SST',
                             validDateTime,
-                            tmpDataDir,
+                            self.NEPAC_DISK_DATASETS,
                             invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = OisstRetriever('OI-SST',
                             validDateTime,
-                            tmpDataDir,
+                            self.NEPAC_DISK_DATASETS,
                             invalidLatLocation)
         self.assertTrue(rt._error)
 
-        OisstRetriever('OI-SST', validDateTime, tmpDataDir, validLocation)
+        OisstRetriever('OI-SST', validDateTime,
+                       self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'OISST.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # ---
@@ -125,7 +99,7 @@ class OisstRetrieverTestCase(unittest.TestCase):
 
         oisstR = OisstRetriever('OI-SST',
                                 validModisDt,
-                                tmpDataDir,
+                                self.NEPAC_DISK_DATASETS,
                                 validModisLoc,
                                 outputDirectory=tmp_directory)
         oisstR.run()

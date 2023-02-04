@@ -1,6 +1,4 @@
 import datetime
-import os
-import tarfile
 import tempfile
 import unittest
 
@@ -10,8 +8,8 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # -----------------------------------------------------------------------------
 # class OceanColorRetrieverTestCase
 #
-# singularity shell -B /att
-# /adapt/nobackup/people/iluser/containers/ilab-nepac-2.0.0.simg
+# singularity shell -B /explore,/panfs,/tmp
+# /explore/nobackup/people/iluser/ilab_containers/nepac-2.2.0.sif
 # cd to the directory containing nepac
 # export PYTHONPATH=`pwd`:`pwd`/nepac
 # python -m unittest discover model/tests/
@@ -19,19 +17,12 @@ from nepac.model.OceanColorRetriever import OceanColorRetriever
 # -----------------------------------------------------------------------------
 class OceanColorRetrieverTestCase(unittest.TestCase):
 
+    NEPAC_DISK_DATASETS = '/usr/local/ilab/nepac_datasets'
+
     # -------------------------------------------------------------------------
     # testInit
     # -------------------------------------------------------------------------
     def testInit(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'MODISA.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(2004, 1, 1)
         invalidDateTime = datetime.datetime(2000, 1, 1)
         validLocation = ('-76.51005', '39.07851')
@@ -39,15 +30,16 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         # Test invalid mission.
         with self.assertRaisesRegex(RuntimeError, 'Invalid mission:'):
 
-            OceanColorRetriever('invalidMission', validDateTime, tmpDataDir,
-                                validLocation)
+            OceanColorRetriever('invalidMission', validDateTime,
+                                self.NEPAC_DISK_DATASETS, validLocation)
 
         rt = OceanColorRetriever(
-            'MODIS-Aqua', invalidDateTime, tmpDataDir, validLocation)
+            'MODIS-Aqua', invalidDateTime,
+            self.NEPAC_DISK_DATASETS, validLocation)
         self.assertTrue(rt._error)
         # Test valid everything.
         OceanColorRetriever('MODIS-Aqua', validDateTime,
-                            tmpDataDir, validLocation)
+                            self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testIsValidDataSet
@@ -66,15 +58,6 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
     # testIsValidLocation
     # -------------------------------------------------------------------------
     def testIsValidLocation(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'MODIST.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         validDateTime = datetime.datetime(year=2018,
                                           month=12,
                                           day=11,
@@ -85,32 +68,23 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         rt = OceanColorRetriever('VIIRS-SNPP',
                                  validDateTime,
-                                 tmpDataDir,
+                                 self.NEPAC_DISK_DATASETS,
                                  invalidLonLocation)
         self.assertTrue(rt._error)
 
         rt = OceanColorRetriever('VIIRS-JPSS1',
                                  validDateTime,
-                                 tmpDataDir,
+                                 self.NEPAC_DISK_DATASETS,
                                  invalidLatLocation)
         self.assertTrue(rt._error)
 
         OceanColorRetriever('VIIRS-SNPP', validDateTime,
-                            tmpDataDir, validLocation)
+                            self.NEPAC_DISK_DATASETS, validLocation)
 
     # -------------------------------------------------------------------------
     # testRun
     # -------------------------------------------------------------------------
     def testRun(self):
-        tmpDir = tempfile.gettempdir()
-        tmpDataDir = os.path.join(tmpDir, 'dummy_dir')
-        if not os.path.exists(tmpDataDir):
-            tmpDataDir = os.mkdir(tmpDataDir)
-        pathToDummySet = \
-            '/adapt/nobackup/projects/ilab/data/NEPAC/nepac_datasets.tar.gz'
-        if not os.path.exists(os.path.join(tmpDataDir, 'VIIRSSNPP.nc')):
-            tar = tarfile.open(pathToDummySet)
-            tar.extractall(path=tmpDataDir)
         tmp_directory = tempfile.gettempdir()
 
         # Test invalid date time.
@@ -120,7 +94,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         invalidModisaOCR = OceanColorRetriever(
             'MODIS-Aqua',
             invalidDt,
-            tmpDataDir,
+            self.NEPAC_DISK_DATASETS,
             invalidLoc,
             outputDirectory=tmp_directory)
         invalidModisaOCR.run()
@@ -139,14 +113,14 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         modisaOCR = OceanColorRetriever('MODIS-Aqua',
                                         validModisDt,
-                                        tmpDataDir,
+                                        self.NEPAC_DISK_DATASETS,
                                         validModisLoc,
                                         outputDirectory=tmp_directory)
         modisaOCR.run()
 
         modistOCR = OceanColorRetriever('MODIS-Terra',
                                         validModisDt,
-                                        tmpDataDir,
+                                        self.NEPAC_DISK_DATASETS,
                                         validModisLoc,
                                         outputDirectory=tmp_directory)
         modistOCR.run()
@@ -159,7 +133,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
         validCzcsLoc = ('-77.1739', '38.6082')
         czcsOCR = OceanColorRetriever('CZCS',
                                       validCzcsDt,
-                                      tmpDataDir,
+                                      self.NEPAC_DISK_DATASETS,
                                       validCzcsLoc,
                                       outputDirectory=tmp_directory)
         czcsOCR.run()
@@ -173,7 +147,7 @@ class OceanColorRetrieverTestCase(unittest.TestCase):
 
         gociOCR = OceanColorRetriever('GOCI',
                                       gociDt,
-                                      tmpDataDir,
+                                      self.NEPAC_DISK_DATASETS,
                                       validLocGOCI,
                                       outputDirectory=tmp_directory)
         gociOCR.run()
